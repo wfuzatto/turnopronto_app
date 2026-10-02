@@ -39,8 +39,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         future: future,
         builder: (context, snapshot) {
           if (snapshot.connectionState != ConnectionState.done) {
-            return const ListView(
-              children: [
+            return ListView(
+              children: const [
                 SizedBox(height: 220),
                 Center(child: CircularProgressIndicator()),
               ],
