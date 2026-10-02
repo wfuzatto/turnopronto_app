@@ -106,6 +106,53 @@ class ApiService {
     await _request('GET', '/health');
   }
 
+  Future<List<Map<String, dynamic>>> categories() async {
+    final data = await _request('GET', '/categories');
+    final list = data['data'];
+    if (list is! List) return <Map<String, dynamic>>[];
+    return list
+        .whereType<Map>()
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
+  }
+
+  Future<Map<String, dynamic>> startRegistration(
+    Map<String, dynamic> payload,
+  ) async {
+    return _request('POST', '/auth/register/start', body: payload);
+  }
+
+  Future<Map<String, dynamic>> resendRegistration(
+    String registrationId,
+  ) async {
+    return _request(
+      'POST',
+      '/auth/register/resend',
+      body: {'registration_id': registrationId},
+    );
+  }
+
+  Future<Map<String, dynamic>> verifyRegistration(
+    String registrationId,
+    String code,
+  ) async {
+    final data = await _request(
+      'POST',
+      '/auth/register/verify',
+      body: {'registration_id': registrationId, 'code': code},
+    );
+    final user = data['user'];
+    if (user is Map &&
+        (user['role'] ?? '').toString() == 'professional' &&
+        data['token'] != null) {
+      token = data['token'].toString();
+      currentUser = Map<String, dynamic>.from(user);
+      demoMode = false;
+      await me();
+    }
+    return data;
+  }
+
   Future<void> login(String email, String password) async {
     final data = await _request(
       'POST',
