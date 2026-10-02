@@ -15,7 +15,7 @@ class ApiService {
           baseUrl ??
               const String.fromEnvironment(
                 'API_URL',
-                defaultValue: 'http://10.0.2.2/turnopronto_web/api/v1',
+                defaultValue: 'https://turnopronto1.websiteseguro.com/api/v1',
               ),
         );
 
