@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/brand_logo.dart';
+import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({
@@ -164,7 +165,24 @@ class _LoginScreenState extends State<LoginScreen> {
                       loading ? 'Entrando...' : 'Entrar',
                     ),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 8),
+                  TextButton(
+                    onPressed: loading
+                        ? null
+                        : () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => RegisterScreen(
+                                  api: widget.api,
+                                  onProfessionalRegistered:
+                                      widget.onLoggedIn,
+                                ),
+                              ),
+                            );
+                          },
+                    child: const Text('Ainda não tem conta? Criar cadastro'),
+                  ),
+                  const SizedBox(height: 4),
                   OutlinedButton.icon(
                     onPressed: demo,
                     icon: const Icon(Icons.play_circle_outline_rounded),
