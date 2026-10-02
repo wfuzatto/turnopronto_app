@@ -5,6 +5,9 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build-apk:
     runs-on: ubuntu-latest
@@ -62,6 +65,31 @@ jobs:
         run: |
           cp build/app/outputs/flutter-apk/app-debug.apk build/TurnoPronto-test.apk
           cp build/app/outputs/flutter-apk/app-debug.apk build/TurnoPronto-latest.apk
+          cp build/app/outputs/flutter-apk/app-debug.apk build/TurnoPronto.apk
+
+      - name: Publish stable test download
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -f test-latest
+          git push origin -f test-latest
+
+          if gh release view test-latest >/dev/null 2>&1; then
+            gh release upload test-latest build/TurnoPronto.apk --clobber
+            gh release edit test-latest \
+              --title "TurnoPronto Android - versão de teste" \
+              --notes "APK de teste mais recente do TurnoPronto. Gerado automaticamente a partir do branch main." \
+              --prerelease
+          else
+            gh release create test-latest build/TurnoPronto.apk \
+              --title "TurnoPronto Android - versão de teste" \
+              --notes "APK de teste mais recente do TurnoPronto. Gerado automaticamente a partir do branch main." \
+              --prerelease
+          fi
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
