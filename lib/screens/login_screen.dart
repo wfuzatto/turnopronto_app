@@ -19,26 +19,15 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final email = TextEditingController(
-    text: 'juliana@turnopronto.local',
-  );
+  final email = TextEditingController();
   final password = TextEditingController();
-  late final TextEditingController server;
-  bool loading = false;
-  bool showServer = false;
-  String? error;
-
-  @override
-  void initState() {
-    super.initState();
-    server = TextEditingController(text: widget.api.baseUrl);
-  }
+    bool loading = false;
+    String? error;
 
   @override
   void dispose() {
     email.dispose();
     password.dispose();
-    server.dispose();
     super.dispose();
   }
 
@@ -48,7 +37,6 @@ class _LoginScreenState extends State<LoginScreen> {
       error = null;
     });
     try {
-      widget.api.setBaseUrl(server.text);
       await widget.api.login(
         email.text.trim(),
         password.text,
@@ -59,11 +47,6 @@ class _LoginScreenState extends State<LoginScreen> {
     } finally {
       if (mounted) setState(() => loading = false);
     }
-  }
-
-  void demo() {
-    widget.api.loginDemo();
-    widget.onLoggedIn();
   }
 
   @override
@@ -134,31 +117,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       labelText: 'Senha',
                     ),
                   ),
-                  const SizedBox(height: 10),
-                  TextButton.icon(
-                    onPressed: () {
-                      setState(() => showServer = !showServer);
-                    },
-                    icon: const Icon(Icons.dns_outlined, size: 18),
-                    label: Text(
-                      showServer
-                          ? 'Ocultar configuração do servidor'
-                          : 'Configurar servidor / XAMPP',
-                    ),
-                  ),
-                  if (showServer) ...[
-                    TextField(
-                      controller: server,
-                      keyboardType: TextInputType.url,
-                      autocorrect: false,
-                      decoration: const InputDecoration(
-                        labelText: 'URL da API',
-                        helperText:
-                            'Ex.: http://192.168.1.50/turnopronto_web/api/v1',
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                  ],
+                  const SizedBox(height: 18),
                   FilledButton(
                     onPressed: loading ? null : login,
                     child: Text(
@@ -181,24 +140,6 @@ class _LoginScreenState extends State<LoginScreen> {
                             );
                           },
                     child: const Text('Ainda não tem conta? Criar cadastro'),
-                  ),
-                  const SizedBox(height: 4),
-                  OutlinedButton.icon(
-                    onPressed: demo,
-                    icon: const Icon(Icons.play_circle_outline_rounded),
-                    label: const Text(
-                      'Abrir demonstração sem servidor',
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'No celular físico, informe o IP do computador com XAMPP. O endereço 10.0.2.2 funciona apenas no emulador Android.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: TpColors.muted,
-                      height: 1.4,
-                    ),
                   ),
                 ],
               ),
