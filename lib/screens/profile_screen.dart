@@ -209,13 +209,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   );
                 },
               ),
-              _Menu(
-                icon: Icons.dns_outlined,
-                title: 'Servidor conectado',
-                subtitle: widget.api.demoMode
-                    ? 'Modo demonstração'
-                    : widget.api.baseUrl,
-              ),
               const SizedBox(height: 8),
               OutlinedButton.icon(
                 onPressed: () async {
