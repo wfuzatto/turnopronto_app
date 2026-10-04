@@ -1045,11 +1045,15 @@ class _VerifyRegistrationScreen extends StatefulWidget {
     required this.api,
     required this.registrationId,
     required this.phoneMasked,
+    required this.developmentBypass,
+    required this.developmentCode,
   });
 
   final ApiService api;
   final String registrationId;
   final String phoneMasked;
+  final bool developmentBypass;
+  final String developmentCode;
 
   @override
   State<_VerifyRegistrationScreen> createState() =>
@@ -1098,7 +1102,15 @@ class _VerifyRegistrationScreenState
       await widget.api.resendRegistration(widget.registrationId);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Novo código enviado por WhatsApp.')),
+        SnackBar(
+          content: Text(
+            widget.developmentBypass
+                ? 'Modo de desenvolvimento: use o código ' +
+                    widget.developmentCode +
+                    '. Nenhum WhatsApp foi enviado.'
+                : 'Novo código enviado por WhatsApp.',
+          ),
+        ),
       );
     } catch (e) {
       if (mounted) setState(() => error = e.toString());
@@ -1131,11 +1143,24 @@ class _VerifyRegistrationScreenState
             ),
             const SizedBox(height: 8),
             Text(
-              'Enviamos um código de 6 dígitos para ${widget.phoneMasked}.',
+              widget.developmentBypass
+                  ? 'Modo de desenvolvimento ativo. Nenhuma mensagem foi enviada para ' +
+                      widget.phoneMasked +
+                      '. Digite o código fixo ' +
+                      widget.developmentCode +
+                      ' para validar o fluxo.'
+                  : 'Enviamos um código de 6 dígitos para ' +
+                      widget.phoneMasked +
+                      '.',
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: TpColors.muted,
+              style: TextStyle(
+                color: widget.developmentBypass
+                    ? const Color(0xFFA06B00)
+                    : TpColors.muted,
                 height: 1.4,
+                fontWeight: widget.developmentBypass
+                    ? FontWeight.w700
+                    : FontWeight.normal,
               ),
             ),
             const SizedBox(height: 24),
@@ -1155,6 +1180,7 @@ class _VerifyRegistrationScreenState
             TextField(
               controller: code,
               keyboardType: TextInputType.number,
+              inputFormatters: const [FilteringTextInputFormatter.digitsOnly],
               maxLength: 6,
               textAlign: TextAlign.center,
               style: const TextStyle(
@@ -1180,6 +1206,110 @@ class _VerifyRegistrationScreenState
           ],
         ),
       ),
+    );
+  }
+}
+
+
+class _DigitsMaskFormatter extends TextInputFormatter {
+  const _DigitsMaskFormatter(this.mask, this.maxDigits);
+
+  final String mask;
+  final int maxDigits;
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    var digits = newValue.text.replaceAll(RegExp(r'\D'), '');
+    if (digits.length > maxDigits) digits = digits.substring(0, maxDigits);
+
+    final buffer = StringBuffer();
+    var digitIndex = 0;
+    for (var i = 0; i < mask.length && digitIndex < digits.length; i++) {
+      if (mask[i] == '#') {
+        buffer.write(digits[digitIndex++]);
+      } else {
+        buffer.write(mask[i]);
+      }
+    }
+
+    final formatted = buffer.toString();
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
+    );
+  }
+}
+
+class _CpfCnpjFormatter extends TextInputFormatter {
+  const _CpfCnpjFormatter();
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    var digits = newValue.text.replaceAll(RegExp(r'\D'), '');
+    if (digits.length > 14) digits = digits.substring(0, 14);
+
+    final formatter = digits.length <= 11
+        ? const _DigitsMaskFormatter('###.###.###-##', 11)
+        : const _DigitsMaskFormatter('##.###.###/####-##', 14);
+
+    return formatter.formatEditUpdate(
+      oldValue,
+      TextEditingValue(
+        text: digits,
+        selection: TextSelection.collapsed(offset: digits.length),
+      ),
+    );
+  }
+}
+
+class _RgMaskFormatter extends TextInputFormatter {
+  const _RgMaskFormatter();
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    var raw = newValue.text
+        .toUpperCase()
+        .replaceAll(RegExp(r'[^0-9A-Z]'), '');
+    if (raw.length > 9) raw = raw.substring(0, 9);
+
+    final buffer = StringBuffer();
+    for (var i = 0; i < raw.length; i++) {
+      if (i == 2 || i == 5) buffer.write('.');
+      if (i == 8) buffer.write('-');
+      buffer.write(raw[i]);
+    }
+
+    final formatted = buffer.toString();
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
+    );
+  }
+}
+
+class _UpperCaseFormatter extends TextInputFormatter {
+  const _UpperCaseFormatter();
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final text = newValue.text
+        .toUpperCase()
+        .replaceAll(RegExp(r'[^A-Z]'), '');
+    return TextEditingValue(
+      text: text,
+      selection: TextSelection.collapsed(offset: text.length),
     );
   }
 }
