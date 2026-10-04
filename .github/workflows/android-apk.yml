@@ -63,6 +63,15 @@ jobs:
 
           grep -q 'applicationId = "br.com.turnopronto.turnopronto_app"' android/app/build.gradle.kts
 
+      - name: Dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Tests
+        run: flutter test
+
       - name: Configure persistent Android signing
         shell: bash
         run: |
@@ -128,14 +137,6 @@ jobs:
 
           grep -q 'signingConfig = signingConfigs.getByName("release")' android/app/build.gradle.kts
 
-      - name: Dependencies
-        run: flutter pub get
-
-      - name: Analyze
-        run: flutter analyze
-
-      - name: Tests
-        run: flutter test
 
       - name: Build signed release APK
         shell: bash
