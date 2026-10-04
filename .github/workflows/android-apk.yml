@@ -107,6 +107,72 @@ jobs:
             echo "available=true" >> "$GITHUB_OUTPUT"
           fi
 
+
+      - name: Configure current development APK identity
+        if: steps.signing.outputs.available != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          manifest = Path("android/app/src/main/AndroidManifest.xml")
+          text = manifest.read_text()
+          text = text.replace('android:label="TurnoPronto"', 'android:label="TurnoPronto DEV"')
+          manifest.write_text(text)
+
+          gradle = Path("android/app/build.gradle.kts")
+          text = gradle.read_text()
+          text = text.replace(
+              'applicationId = "br.com.turnopronto.turnopronto_app"',
+              'applicationId = "br.com.turnopronto.dev"',
+          )
+          gradle.write_text(text)
+          PY
+
+          grep -q 'applicationId = "br.com.turnopronto.dev"' android/app/build.gradle.kts
+
+      - name: Build optimized development APK
+        if: steps.signing.outputs.available != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter build apk --release --split-per-abi             --build-name="0.1.${GITHUB_RUN_NUMBER}"             --build-number="${GITHUB_RUN_NUMBER}"
+
+          ARM64="build/app/outputs/flutter-apk/app-arm64-v8a-release.apk"
+          test -f "$ARM64"
+          cp "$ARM64" build/TurnoPronto-dev-arm64.apk
+
+      - name: Publish current development APK
+        if: steps.signing.outputs.available != 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -f dev-latest
+          git push origin -f dev-latest
+
+          NOTES="APK de desenvolvimento gerado do commit atual. Inclui as últimas alterações do cadastro e máscaras. Usa package br.com.turnopronto.dev e pode ser instalado ao lado do app antigo enquanto a assinatura definitiva não está configurada."
+
+          if gh release view dev-latest >/dev/null 2>&1; then
+            gh release upload dev-latest build/TurnoPronto-dev-arm64.apk --clobber
+            gh release edit dev-latest               --title "TurnoPronto Android DEV - atual"               --notes "$NOTES"               --prerelease
+          else
+            gh release create dev-latest build/TurnoPronto-dev-arm64.apk               --title "TurnoPronto Android DEV - atual"               --notes "$NOTES"               --prerelease
+          fi
+
+      - name: Upload development APK
+        if: steps.signing.outputs.available != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: TurnoPronto-DEV-APK
+          path: build/TurnoPronto-dev-arm64.apk
+          if-no-files-found: error
+          retention-days: 30
+
       - name: Configure persistent Android signing
         if: steps.signing.outputs.available == 'true'
         shell: bash
