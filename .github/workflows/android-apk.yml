@@ -137,7 +137,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          flutter build apk --release --split-per-abi             --build-name="0.1.${GITHUB_RUN_NUMBER}"             --build-number="${GITHUB_RUN_NUMBER}"
+          flutter build apk --release --build-name="0.1.${GITHUB_RUN_NUMBER}" --build-number="${GITHUB_RUN_NUMBER}"
+
+          UNIVERSAL="build/app/outputs/flutter-apk/app-release.apk"
+          test -f "$UNIVERSAL"
+          cp "$UNIVERSAL" build/TurnoPronto-dev.apk
+
+          flutter build apk --release --split-per-abi --build-name="0.1.${GITHUB_RUN_NUMBER}" --build-number="${GITHUB_RUN_NUMBER}"
 
           ARM64="build/app/outputs/flutter-apk/app-arm64-v8a-release.apk"
           test -f "$ARM64"
@@ -158,10 +164,10 @@ jobs:
           NOTES="APK de desenvolvimento gerado do commit atual. Inclui as últimas alterações do cadastro e máscaras. Usa package br.com.turnopronto.dev e pode ser instalado ao lado do app antigo enquanto a assinatura definitiva não está configurada."
 
           if gh release view dev-latest >/dev/null 2>&1; then
-            gh release upload dev-latest build/TurnoPronto-dev-arm64.apk --clobber
-            gh release edit dev-latest               --title "TurnoPronto Android DEV - atual"               --notes "$NOTES"               --prerelease
+            gh release upload dev-latest build/TurnoPronto-dev.apk build/TurnoPronto-dev-arm64.apk --clobber
+            gh release edit dev-latest --title "TurnoPronto Android DEV - atual" --notes "$NOTES" --prerelease
           else
-            gh release create dev-latest build/TurnoPronto-dev-arm64.apk               --title "TurnoPronto Android DEV - atual"               --notes "$NOTES"               --prerelease
+            gh release create dev-latest build/TurnoPronto-dev.apk build/TurnoPronto-dev-arm64.apk --title "TurnoPronto Android DEV - atual" --notes "$NOTES" --prerelease
           fi
 
       - name: Upload development APK
@@ -169,7 +175,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: TurnoPronto-DEV-APK
-          path: build/TurnoPronto-dev-arm64.apk
+          path: |
+            build/TurnoPronto-dev.apk
+            build/TurnoPronto-dev-arm64.apk
           if-no-files-found: error
           retention-days: 30
 
