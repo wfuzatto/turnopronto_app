@@ -14,3 +14,8 @@ android/key.properties
 ios/Pods/
 ios/.symlinks/
 ios/Flutter/ephemeral/
+
+# Android signing - never commit private signing keys
+*.jks
+*.keystore
+signing-recovery.txt
