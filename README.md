@@ -6,13 +6,13 @@ Este repositório é exclusivo do cliente Android. O backend/API permanece em `w
 
 ## Comunicação
 
-A comunicação do aplicativo é fixa via HTTPS:
+O aplicativo se comunica automaticamente por HTTPS com:
 
 ```text
 https://turnopronto.com.br/api/v1
 ```
 
-O aplicativo nunca acessa o banco MariaDB diretamente e não oferece configuração de servidor ao usuário.
+O banco MariaDB é acessado somente pelo backend web. Nenhuma credencial de banco deve ser incluída no APK.
 
 ## Desenvolvimento
 
@@ -21,9 +21,24 @@ O aplicativo nunca acessa o banco MariaDB diretamente e não oferece configuraç
 flutter run
 ```
 
-## Build de teste
+## Build Android e atualização
 
-O GitHub Actions gera automaticamente o APK a partir do branch `main`.
+O GitHub Actions gera um APK Android com o mesmo identificador:
+
+```text
+br.com.turnopronto.turnopronto_app
+```
+
+Para que uma versão nova atualize a já instalada sem conflito, todos os APKs precisam ser assinados pela mesma chave e possuir `versionCode` maior.
+
+O workflow espera os seguintes GitHub Actions Secrets:
+
+- `ANDROID_KEYSTORE_BASE64`
+- `ANDROID_KEYSTORE_PASSWORD`
+- `ANDROID_KEY_ALIAS`
+- `ANDROID_KEY_PASSWORD`
+
+Depois que essa chave de assinatura for definida, ela deve ser preservada para todas as versões futuras.
 
 Download permanente da versão de teste:
 
@@ -42,4 +57,4 @@ https://github.com/wfuzatto/turnopronto_app/releases/download/test-latest/TurnoP
 - ganhos;
 - perfil, documentos e reputação.
 
-Nenhuma senha de banco, token de provedor ou outro segredo deve ser versionado neste repositório.
+Nenhuma senha de banco, token de provedor, chave de assinatura ou outro segredo deve ser versionado neste repositório.
