@@ -1,6 +1,6 @@
 $ErrorActionPreference = "Stop"
 
-Write-Host "TurnoPronto App - bootstrap Flutter" -ForegroundColor Cyan
+Write-Host "TurnoPronto Android - bootstrap Flutter" -ForegroundColor Cyan
 
 if (-not (Get-Command flutter -ErrorAction SilentlyContinue)) {
     Write-Host "Flutter não encontrado no PATH." -ForegroundColor Red
@@ -10,13 +10,15 @@ if (-not (Get-Command flutter -ErrorAction SilentlyContinue)) {
 
 flutter --version
 
-if (-not (Test-Path "android") -or -not (Test-Path "ios")) {
-    Write-Host "Gerando shells nativos Android/iOS..." -ForegroundColor Yellow
-    flutter create --platforms=android,ios --project-name turnopronto_app .
+if (-not (Test-Path "android")) {
+    Write-Host "Gerando shell nativo Android..." -ForegroundColor Yellow
+    flutter create --platforms=android --project-name turnopronto_app --org br.com.turnopronto .
 }
 
 flutter pub get
 flutter analyze
 
-Write-Host "\nProjeto pronto." -ForegroundColor Green
-Write-Host "Execute: flutter run"\nWrite-Host "API fixa: https://turnopronto.com.br/api/v1"
+Write-Host ""
+Write-Host "Projeto pronto." -ForegroundColor Green
+Write-Host "Execute: flutter run"
+Write-Host "API fixa: https://turnopronto.com.br/api/v1"
