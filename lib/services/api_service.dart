@@ -51,7 +51,7 @@ class ApiService {
       final dynamic decoded =
           raw.isEmpty ? <String, dynamic>{} : jsonDecode(raw);
       if (decoded is! Map) {
-        throw ApiException('Resposta inválida do servidor.');
+        throw ApiException('Resposta inválida do TurnoPronto.');
       }
       final data = Map<String, dynamic>.from(decoded);
       if (response.statusCode < 200 ||
@@ -64,11 +64,11 @@ class ApiService {
       }
       return data;
     } on SocketException {
-      throw ApiException('Não foi possível conectar a ' + _baseUrl);
+      throw ApiException('Não foi possível acessar o TurnoPronto agora.');
     } on HandshakeException {
-      throw ApiException('Falha na conexão HTTPS com o servidor.');
+      throw ApiException('Falha na conexão segura com o TurnoPronto.');
     } on FormatException {
-      throw ApiException('O servidor respondeu em um formato inválido.');
+      throw ApiException('O TurnoPronto respondeu em um formato inválido.');
     } finally {
       client.close(force: true);
     }
