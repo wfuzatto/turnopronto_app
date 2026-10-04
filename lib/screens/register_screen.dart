@@ -1180,7 +1180,7 @@ class _VerifyRegistrationScreenState
             TextField(
               controller: code,
               keyboardType: TextInputType.number,
-              inputFormatters: const [FilteringTextInputFormatter.digitsOnly],
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               maxLength: 6,
               textAlign: TextAlign.center,
               style: const TextStyle(
