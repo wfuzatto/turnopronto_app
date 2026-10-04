@@ -12,6 +12,11 @@ jobs:
   build-apk:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
 
     steps:
       - name: Checkout
@@ -35,14 +40,93 @@ jobs:
       - name: Generate Android shell
         run: flutter create --platforms=android --project-name turnopronto_app --org br.com.turnopronto .
 
-      - name: Set Android app label
+      - name: Set Android identity
+        shell: bash
         run: |
+          set -euo pipefail
           python3 - <<'PY'
           from pathlib import Path
-          p = Path("android/app/src/main/AndroidManifest.xml")
-          s = p.read_text().replace('android:label="turnopronto_app"', 'android:label="TurnoPronto"')
+
+          manifest = Path("android/app/src/main/AndroidManifest.xml")
+          text = manifest.read_text()
+          text = text.replace('android:label="turnopronto_app"', 'android:label="TurnoPronto"')
+          manifest.write_text(text)
+
+          gradle = Path("android/app/build.gradle.kts")
+          text = gradle.read_text()
+          text = text.replace(
+              'applicationId = "br.com.turnopronto.turnopronto_app"',
+              'applicationId = "br.com.turnopronto.turnopronto_app"',
+          )
+          gradle.write_text(text)
+          PY
+
+          grep -q 'applicationId = "br.com.turnopronto.turnopronto_app"' android/app/build.gradle.kts
+
+      - name: Configure persistent Android signing
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          for value in ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD; do
+            if [[ -z "${!value:-}" ]]; then
+              echo "Missing required GitHub Actions secret: $value" >&2
+              echo "A stable signing key is required so a new APK can update the installed TurnoPronto app." >&2
+              exit 1
+            fi
+          done
+
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/turnopronto-upload.jks
+
+          cat > android/key.properties <<EOF
+          storePassword=$ANDROID_KEYSTORE_PASSWORD
+          keyPassword=$ANDROID_KEY_PASSWORD
+          keyAlias=$ANDROID_KEY_ALIAS
+          storeFile=turnopronto-upload.jks
+          EOF
+
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p = Path("android/app/build.gradle.kts")
+          s = p.read_text()
+
+          imports = "import java.util.Properties\nimport java.io.FileInputStream\n\n"
+          if "import java.util.Properties" not in s:
+              s = imports + s
+
+          props = """val keystoreProperties = Properties()
+          val keystorePropertiesFile = rootProject.file("key.properties")
+          keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+
+          """
+          if "val keystoreProperties = Properties()" not in s:
+              s = s.replace("android {", props + "android {", 1)
+
+          signing = """    signingConfigs {
+                  create("release") {
+                      keyAlias = keystoreProperties["keyAlias"] as String
+                      keyPassword = keystoreProperties["keyPassword"] as String
+                      storeFile = file(keystoreProperties["storeFile"] as String)
+                      storePassword = keystoreProperties["storePassword"] as String
+                  }
+              }
+
+          """
+          if 'create("release")' not in s:
+              s = s.replace("    buildTypes {", signing + "    buildTypes {", 1)
+
+          s = s.replace(
+              'signingConfig = signingConfigs.getByName("debug")',
+              'signingConfig = signingConfigs.getByName("release")',
+          )
+
           p.write_text(s)
           PY
+
+          keytool -list             -keystore android/app/turnopronto-upload.jks             -storepass "$ANDROID_KEYSTORE_PASSWORD"             -alias "$ANDROID_KEY_ALIAS" >/dev/null
+
+          grep -q 'signingConfig = signingConfigs.getByName("release")' android/app/build.gradle.kts
 
       - name: Dependencies
         run: flutter pub get
@@ -53,14 +137,22 @@ jobs:
       - name: Tests
         run: flutter test
 
-      - name: Build debug APK
-        run: flutter build apk --debug
-
-      - name: Prepare artifact
+      - name: Build signed release APK
+        shell: bash
         run: |
-          cp build/app/outputs/flutter-apk/app-debug.apk build/TurnoPronto-test.apk
-          cp build/app/outputs/flutter-apk/app-debug.apk build/TurnoPronto-latest.apk
-          cp build/app/outputs/flutter-apk/app-debug.apk build/TurnoPronto.apk
+          set -euo pipefail
+          flutter build apk --release             --build-name="0.1.${GITHUB_RUN_NUMBER}"             --build-number="${GITHUB_RUN_NUMBER}"
+
+      - name: Verify APK identity and signature
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="build/app/outputs/flutter-apk/app-release.apk"
+          test -f "$APK"
+          "$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -n1)/apksigner" verify --verbose --print-certs "$APK"
+          cp "$APK" build/TurnoPronto-test.apk
+          cp "$APK" build/TurnoPronto-latest.apk
+          cp "$APK" build/TurnoPronto.apk
 
       - name: Publish stable test download
         shell: bash
@@ -75,15 +167,9 @@ jobs:
 
           if gh release view test-latest >/dev/null 2>&1; then
             gh release upload test-latest build/TurnoPronto.apk --clobber
-            gh release edit test-latest \
-              --title "TurnoPronto Android - versão de teste" \
-              --notes "APK de teste mais recente do TurnoPronto. Gerado automaticamente a partir do branch main." \
-              --prerelease
+            gh release edit test-latest               --title "TurnoPronto Android - versão de teste"               --notes "APK Android assinado do TurnoPronto. Mantém o mesmo applicationId e usa versionCode crescente para permitir atualização sobre versões futuras assinadas pela mesma chave."               --prerelease
           else
-            gh release create test-latest build/TurnoPronto.apk \
-              --title "TurnoPronto Android - versão de teste" \
-              --notes "APK de teste mais recente do TurnoPronto. Gerado automaticamente a partir do branch main." \
-              --prerelease
+            gh release create test-latest build/TurnoPronto.apk               --title "TurnoPronto Android - versão de teste"               --notes "APK Android assinado do TurnoPronto. Mantém o mesmo applicationId e usa versionCode crescente para permitir atualização sobre versões futuras assinadas pela mesma chave."               --prerelease
           fi
 
       - name: Upload APK
