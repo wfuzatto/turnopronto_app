@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../services/api_service.dart';
 import '../theme/app_theme.dart';
 
@@ -21,6 +22,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final phone = TextEditingController();
   final email = TextEditingController();
   final cpf = TextEditingController();
+  final rg = TextEditingController();
   final birthDate = TextEditingController();
   final headline = TextEditingController();
   final cnpj = TextEditingController();
@@ -37,11 +39,41 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final password = TextEditingController();
   final passwordConfirm = TextEditingController();
 
+  final Map<String, FocusNode> _focus = {
+    'name': FocusNode(),
+    'phone': FocusNode(),
+    'email': FocusNode(),
+    'cpf': FocusNode(),
+    'rg': FocusNode(),
+    'birthDate': FocusNode(),
+    'headline': FocusNode(),
+    'cnpj': FocusNode(),
+    'responsibleCpf': FocusNode(),
+    'legalName': FocusNode(),
+    'tradeName': FocusNode(),
+    'postalCode': FocusNode(),
+    'address': FocusNode(),
+    'city': FocusNode(),
+    'state': FocusNode(),
+    'pixKey': FocusNode(),
+    'pixHolderName': FocusNode(),
+    'pixHolderDocument': FocusNode(),
+    'password': FocusNode(),
+    'passwordConfirm': FocusNode(),
+  };
+
+  final _categoriesKey = GlobalKey();
+  final _termsKey = GlobalKey();
+  final _privacyKey = GlobalKey();
+  final _whatsappKey = GlobalKey();
+
   String role = 'professional';
   String pixType = 'cpf';
   bool termsAccepted = false;
   bool privacyAccepted = false;
   bool whatsappConsent = false;
+  bool passwordVisible = false;
+  bool passwordConfirmVisible = false;
   bool loading = false;
   String? error;
 
@@ -70,6 +102,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       phone,
       email,
       cpf,
+      rg,
       birthDate,
       headline,
       cnpj,
@@ -87,6 +120,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       passwordConfirm,
     ]) {
       controller.dispose();
+    }
+    for (final node in _focus.values) {
+      node.dispose();
     }
     super.dispose();
   }
@@ -112,6 +148,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       'whatsapp_consent': whatsappConsent,
       if (role == 'professional') ...{
         'cpf': cpf.text.trim(),
+        'rg': rg.text.trim(),
         'birth_date': birthDate.text.trim(),
         'headline': headline.text.trim(),
         'categories': selectedCategories.toList(),
