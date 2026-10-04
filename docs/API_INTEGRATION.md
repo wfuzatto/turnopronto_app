@@ -1,18 +1,20 @@
 # Integração com `turnopronto_web`
 
-A URL é definida em build/runtime por `--dart-define=API_URL=...`.
+O aplicativo utiliza uma URL fixa de produção:
 
-Exemplo Android Emulator:
-
-```bash
-flutter run --dart-define=API_URL=http://10.0.2.2/turnopronto_web/api/v1
+```text
+https://turnopronto.com.br/api/v1
 ```
+
+Não existe configuração de endereço, host, porta ou banco de dados no aplicativo. O cliente mobile se comunica somente por HTTPS/JSON com a API do TurnoPronto.
+
+O banco MariaDB é acessado exclusivamente pelo backend `turnopronto_web`. Credenciais de banco nunca devem ser incluídas no APK.
 
 O login devolve um bearer token. O MVP atual mantém esse token em memória. A etapa de produção deve armazená-lo em Keychain/Keystore através de um plugin de secure storage.
 
 ## Fonte de verdade
 
-Sempre servidor:
+A API é responsável por:
 
 - disponibilidade da vaga;
 - aceite;
@@ -24,4 +26,4 @@ Sempre servidor:
 - repasses;
 - disputas.
 
-O app nunca deve decidir sozinho uma operação financeira ou penalidade.
+O aplicativo não deve decidir sozinho operações financeiras, penalidades ou regras de negócio.
