@@ -161,18 +161,313 @@ class _RegisterScreenState extends State<RegisterScreen> {
     };
   }
 
+  String _digits(String value) => value.replaceAll(RegExp(r'\D'), '');
+
+  String _rgValue(String value) =>
+      value.toUpperCase().replaceAll(RegExp(r'[^0-9A-Z]'), '');
+
+  bool _validEmail(String value) =>
+      RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(value.trim());
+
+  bool _validCpf(String value) {
+    final d = _digits(value);
+    if (d.length != 11 || RegExp(r'^(\d)\1{10}$').hasMatch(d)) return false;
+    for (var t = 9; t < 11; t++) {
+      var sum = 0;
+      for (var i = 0; i < t; i++) {
+        sum += int.parse(d[i]) * ((t + 1) - i);
+      }
+      final digit = ((10 * sum) % 11) % 10;
+      if (int.parse(d[t]) != digit) return false;
+    }
+    return true;
+  }
+
+  bool _validCnpj(String value) {
+    final d = _digits(value);
+    if (d.length != 14 || RegExp(r'^(\d)\1{13}$').hasMatch(d)) return false;
+
+    int calc(String base, List<int> weights) {
+      var sum = 0;
+      for (var i = 0; i < weights.length; i++) {
+        sum += int.parse(base[i]) * weights[i];
+      }
+      final rest = sum % 11;
+      return rest < 2 ? 0 : 11 - rest;
+    }
+
+    final d1 = calc(d, const [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]);
+    if (int.parse(d[12]) != d1) return false;
+    final d2 = calc(d, const [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]);
+    return int.parse(d[13]) == d2;
+  }
+
+  void _validationError(
+    String message, {
+    FocusNode? focusNode,
+    GlobalKey? targetKey,
+  }) {
+    setState(() => error = message);
+    final messenger = ScaffoldMessenger.of(context);
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      focusNode?.requestFocus();
+      final targetContext = targetKey?.currentContext;
+      if (targetContext != null) {
+        Scrollable.ensureVisible(
+          targetContext,
+          duration: const Duration(milliseconds: 280),
+          curve: Curves.easeOut,
+          alignment: 0.2,
+        );
+      }
+    });
+  }
+
+  bool _validateBeforeSubmit() {
+    if (name.text.trim().length < 3) {
+      _validationError(
+        role == 'professional'
+            ? 'Informe seu nome completo.'
+            : 'Informe o nome completo do responsável.',
+        focusNode: _focus['name'],
+      );
+      return false;
+    }
+
+    final phoneDigits = _digits(phone.text);
+    if (phoneDigits.length != 10 && phoneDigits.length != 11) {
+      _validationError(
+        'Informe um WhatsApp válido com DDD.',
+        focusNode: _focus['phone'],
+      );
+      return false;
+    }
+
+    if (!_validEmail(email.text)) {
+      _validationError('Informe um e-mail válido.', focusNode: _focus['email']);
+      return false;
+    }
+
+    if (role == 'professional') {
+      if (!_validCpf(cpf.text)) {
+        _validationError('CPF inválido.', focusNode: _focus['cpf']);
+        return false;
+      }
+      final cleanRg = _rgValue(rg.text);
+      if (cleanRg.length < 7 || cleanRg.length > 12) {
+        _validationError('Informe um RG válido.', focusNode: _focus['rg']);
+        return false;
+      }
+      if (birthDate.text.trim().isEmpty) {
+        _validationError(
+          'Informe sua data de nascimento.',
+          focusNode: _focus['birthDate'],
+        );
+        return false;
+      }
+      if (headline.text.trim().isEmpty) {
+        _validationError(
+          'Informe sua atividade principal.',
+          focusNode: _focus['headline'],
+        );
+        return false;
+      }
+      if (selectedCategories.isEmpty) {
+        _validationError(
+          'Selecione pelo menos uma função de interesse.',
+          targetKey: _categoriesKey,
+        );
+        return false;
+      }
+    } else {
+      if (!_validCpf(responsibleCpf.text)) {
+        _validationError(
+          'CPF do responsável inválido.',
+          focusNode: _focus['responsibleCpf'],
+        );
+        return false;
+      }
+      if (!_validCnpj(cnpj.text)) {
+        _validationError('CNPJ inválido.', focusNode: _focus['cnpj']);
+        return false;
+      }
+      if (legalName.text.trim().isEmpty) {
+        _validationError(
+          'Informe a razão social.',
+          focusNode: _focus['legalName'],
+        );
+        return false;
+      }
+      if (tradeName.text.trim().isEmpty) {
+        _validationError(
+          'Informe o nome fantasia.',
+          focusNode: _focus['tradeName'],
+        );
+        return false;
+      }
+    }
+
+    if (_digits(postalCode.text).length != 8) {
+      _validationError('Informe um CEP válido.', focusNode: _focus['postalCode']);
+      return false;
+    }
+    if (address.text.trim().isEmpty) {
+      _validationError('Informe o endereço.', focusNode: _focus['address']);
+      return false;
+    }
+    if (city.text.trim().isEmpty) {
+      _validationError('Informe a cidade.', focusNode: _focus['city']);
+      return false;
+    }
+    if (!RegExp(r'^[A-Za-z]{2}$').hasMatch(state.text.trim())) {
+      _validationError('Informe a UF com 2 letras.', focusNode: _focus['state']);
+      return false;
+    }
+
+    if (pixKey.text.trim().isEmpty) {
+      _validationError('Informe a chave Pix.', focusNode: _focus['pixKey']);
+      return false;
+    }
+    if (pixType == 'cpf' && !_validCpf(pixKey.text)) {
+      _validationError('A chave Pix CPF é inválida.', focusNode: _focus['pixKey']);
+      return false;
+    }
+    if (pixType == 'cnpj' && !_validCnpj(pixKey.text)) {
+      _validationError('A chave Pix CNPJ é inválida.', focusNode: _focus['pixKey']);
+      return false;
+    }
+    if (pixType == 'email' && !_validEmail(pixKey.text)) {
+      _validationError(
+        'A chave Pix de e-mail é inválida.',
+        focusNode: _focus['pixKey'],
+      );
+      return false;
+    }
+    if (pixType == 'phone') {
+      final pixPhoneDigits = _digits(pixKey.text);
+      if (pixPhoneDigits.length != 10 && pixPhoneDigits.length != 11) {
+        _validationError(
+          'A chave Pix de telefone é inválida.',
+          focusNode: _focus['pixKey'],
+        );
+        return false;
+      }
+    }
+
+    if (pixHolderName.text.trim().length < 3) {
+      _validationError(
+        'Informe o nome do titular da conta Pix.',
+        focusNode: _focus['pixHolderName'],
+      );
+      return false;
+    }
+
+    final holderDigits = _digits(pixHolderDocument.text);
+    if (holderDigits.length == 11) {
+      if (!_validCpf(holderDigits)) {
+        _validationError(
+          'CPF do titular do Pix inválido.',
+          focusNode: _focus['pixHolderDocument'],
+        );
+        return false;
+      }
+    } else if (holderDigits.length == 14) {
+      if (!_validCnpj(holderDigits)) {
+        _validationError(
+          'CNPJ do titular do Pix inválido.',
+          focusNode: _focus['pixHolderDocument'],
+        );
+        return false;
+      }
+    } else {
+      _validationError(
+        'Informe o CPF ou CNPJ do titular do Pix.',
+        focusNode: _focus['pixHolderDocument'],
+      );
+      return false;
+    }
+
+    if (password.text.length < 8) {
+      _validationError(
+        'A senha deve ter pelo menos 8 caracteres.',
+        focusNode: _focus['password'],
+      );
+      return false;
+    }
+    if (passwordConfirm.text.isEmpty) {
+      _validationError(
+        'Confirme a senha digitada.',
+        focusNode: _focus['passwordConfirm'],
+      );
+      return false;
+    }
+    if (password.text != passwordConfirm.text) {
+      _validationError(
+        'As senhas não coincidem.',
+        focusNode: _focus['passwordConfirm'],
+      );
+      return false;
+    }
+
+    if (!termsAccepted) {
+      _validationError(
+        'Aceite os Termos de Uso para continuar.',
+        targetKey: _termsKey,
+      );
+      return false;
+    }
+    if (!privacyAccepted) {
+      _validationError(
+        'Aceite a Política de Privacidade para continuar.',
+        targetKey: _privacyKey,
+      );
+      return false;
+    }
+    if (!whatsappConsent) {
+      _validationError(
+        'Autorize as mensagens transacionais no WhatsApp para continuar.',
+        targetKey: _whatsappKey,
+      );
+      return false;
+    }
+
+    return true;
+  }
+
+  List<TextInputFormatter>? _pixKeyFormatters() {
+    switch (pixType) {
+      case 'cpf':
+        return [const _DigitsMaskFormatter('###.###.###-##', 11)];
+      case 'cnpj':
+        return [const _DigitsMaskFormatter('##.###.###/####-##', 14)];
+      case 'phone':
+        return [const _DigitsMaskFormatter('(##) #####-####', 11)];
+      default:
+        return null;
+    }
+  }
+
+  TextInputType _pixKeyKeyboardType() {
+    switch (pixType) {
+      case 'cpf':
+      case 'cnpj':
+      case 'phone':
+        return TextInputType.number;
+      case 'email':
+        return TextInputType.emailAddress;
+      default:
+        return TextInputType.text;
+    }
+  }
+
   Future<void> _submit() async {
-    if (!termsAccepted || !privacyAccepted || !whatsappConsent) {
-      setState(() {
-        error =
-            'Aceite os Termos, a Política de Privacidade e as mensagens transacionais no WhatsApp.';
-      });
-      return;
-    }
-    if (role == 'professional' && selectedCategories.isEmpty) {
-      setState(() => error = 'Selecione pelo menos uma função de interesse.');
-      return;
-    }
+    FocusScope.of(context).unfocus();
+    if (!_validateBeforeSubmit()) return;
 
     setState(() {
       loading = true;
@@ -184,6 +479,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (!mounted) return;
       final registrationId = (result['registration_id'] ?? '').toString();
       final phoneMasked = (result['phone_masked'] ?? phone.text).toString();
+      final developmentBypass = result['development_bypass'] == true;
+      final developmentCode =
+          (result['development_code'] ?? '000111').toString();
 
       final verifiedRole = await Navigator.of(context).push<String>(
         MaterialPageRoute(
@@ -191,6 +489,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
             api: widget.api,
             registrationId: registrationId,
             phoneMasked: phoneMasked,
+            developmentBypass: developmentBypass,
+            developmentCode: developmentCode,
           ),
         ),
       );
@@ -219,7 +519,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         if (mounted) Navigator.of(context).pop();
       }
     } catch (e) {
-      if (mounted) setState(() => error = e.toString());
+      if (mounted) _validationError(e.toString());
     } finally {
       if (mounted) setState(() => loading = false);
     }
