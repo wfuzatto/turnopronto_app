@@ -589,17 +589,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
     int? maxLength,
     VoidCallback? onTap,
     bool readOnly = false,
+    FocusNode? focusNode,
+    List<TextInputFormatter>? inputFormatters,
+    Widget? suffixIcon,
+    TextCapitalization textCapitalization = TextCapitalization.none,
   }) {
     return TextField(
       controller: controller,
+      focusNode: focusNode,
       keyboardType: keyboardType,
       obscureText: obscureText,
       maxLength: maxLength,
       readOnly: readOnly,
       onTap: onTap,
+      inputFormatters: inputFormatters,
+      textCapitalization: textCapitalization,
       decoration: InputDecoration(
         labelText: label,
         counterText: '',
+        suffixIcon: suffixIcon,
       ),
     );
   }
@@ -669,39 +677,70 @@ class _RegisterScreenState extends State<RegisterScreen> {
               _input(
                 name,
                 isProfessional
-                    ? 'Nome completo'
-                    : 'Nome completo do responsável',
+                    ? 'Nome completo *'
+                    : 'Nome completo do responsável *',
                 keyboardType: TextInputType.name,
+                focusNode: _focus['name'],
+                textCapitalization: TextCapitalization.words,
               ),
               const SizedBox(height: 12),
               _input(
                 phone,
-                'WhatsApp com DDD',
+                'WhatsApp com DDD *',
                 keyboardType: TextInputType.phone,
+                focusNode: _focus['phone'],
+                inputFormatters: const [
+                  _DigitsMaskFormatter('(##) #####-####', 11),
+                ],
               ),
               const SizedBox(height: 12),
               _input(
                 email,
-                'E-mail',
+                'E-mail *',
                 keyboardType: TextInputType.emailAddress,
+                focusNode: _focus['email'],
               ),
               const SizedBox(height: 12),
               if (isProfessional) ...[
-                _input(cpf, 'CPF', keyboardType: TextInputType.number),
+                _input(
+                  cpf,
+                  'CPF *',
+                  keyboardType: TextInputType.number,
+                  focusNode: _focus['cpf'],
+                  inputFormatters: const [
+                    _DigitsMaskFormatter('###.###.###-##', 11),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                _input(
+                  rg,
+                  'RG *',
+                  keyboardType: TextInputType.text,
+                  focusNode: _focus['rg'],
+                  inputFormatters: const [_RgMaskFormatter()],
+                  textCapitalization: TextCapitalization.characters,
+                ),
                 const SizedBox(height: 12),
                 _input(
                   birthDate,
-                  'Data de nascimento',
+                  'Data de nascimento *',
                   keyboardType: TextInputType.datetime,
                   readOnly: true,
+                  focusNode: _focus['birthDate'],
                   onTap: _pickBirthDate,
                 ),
                 const SizedBox(height: 12),
-                _input(headline, 'Atividade principal'),
+                _input(
+                  headline,
+                  'Atividade principal *',
+                  focusNode: _focus['headline'],
+                  textCapitalization: TextCapitalization.sentences,
+                ),
                 const SizedBox(height: 18),
-                const Text(
-                  'Funções de interesse',
-                  style: TextStyle(fontWeight: FontWeight.w800),
+                Text(
+                  'Funções de interesse *',
+                  key: _categoriesKey,
+                  style: const TextStyle(fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 8),
                 if (categories.isEmpty)
@@ -736,15 +775,37 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ] else ...[
                 _input(
                   responsibleCpf,
-                  'CPF do responsável',
+                  'CPF do responsável *',
                   keyboardType: TextInputType.number,
+                  focusNode: _focus['responsibleCpf'],
+                  inputFormatters: const [
+                    _DigitsMaskFormatter('###.###.###-##', 11),
+                  ],
                 ),
                 const SizedBox(height: 12),
-                _input(cnpj, 'CNPJ', keyboardType: TextInputType.number),
+                _input(
+                  cnpj,
+                  'CNPJ *',
+                  keyboardType: TextInputType.number,
+                  focusNode: _focus['cnpj'],
+                  inputFormatters: const [
+                    _DigitsMaskFormatter('##.###.###/####-##', 14),
+                  ],
+                ),
                 const SizedBox(height: 12),
-                _input(legalName, 'Razão social'),
+                _input(
+                  legalName,
+                  'Razão social *',
+                  focusNode: _focus['legalName'],
+                  textCapitalization: TextCapitalization.words,
+                ),
                 const SizedBox(height: 12),
-                _input(tradeName, 'Nome fantasia'),
+                _input(
+                  tradeName,
+                  'Nome fantasia *',
+                  focusNode: _focus['tradeName'],
+                  textCapitalization: TextCapitalization.words,
+                ),
               ],
               const SizedBox(height: 22),
               const Text(
@@ -757,23 +818,41 @@ class _RegisterScreenState extends State<RegisterScreen> {
               const SizedBox(height: 10),
               _input(
                 postalCode,
-                'CEP',
+                'CEP *',
                 keyboardType: TextInputType.number,
+                focusNode: _focus['postalCode'],
+                inputFormatters: const [
+                  _DigitsMaskFormatter('#####-###', 8),
+                ],
               ),
               const SizedBox(height: 12),
-              _input(address, 'Endereço'),
+              _input(
+                address,
+                'Endereço *',
+                focusNode: _focus['address'],
+                textCapitalization: TextCapitalization.words,
+              ),
               const SizedBox(height: 12),
               Row(
                 children: [
-                  Expanded(child: _input(city, 'Cidade')),
+                  Expanded(
+                    child: _input(
+                      city,
+                      'Cidade *',
+                      focusNode: _focus['city'],
+                      textCapitalization: TextCapitalization.words,
+                    ),
+                  ),
                   const SizedBox(width: 10),
                   SizedBox(
                     width: 90,
                     child: _input(
                       state,
-                      'UF',
+                      'UF *',
                       maxLength: 2,
                       keyboardType: TextInputType.text,
+                      focusNode: _focus['state'],
+                      inputFormatters: const [_UpperCaseFormatter()],
                     ),
                   ),
                 ],
@@ -805,18 +884,36 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ],
                 onChanged: (value) {
-                  if (value != null) setState(() => pixType = value);
+                  if (value != null && value != pixType) {
+                    setState(() {
+                      pixType = value;
+                      pixKey.clear();
+                    });
+                  }
                 },
               ),
               const SizedBox(height: 12),
-              _input(pixKey, 'Chave Pix'),
+              _input(
+                pixKey,
+                'Chave Pix *',
+                keyboardType: _pixKeyKeyboardType(),
+                focusNode: _focus['pixKey'],
+                inputFormatters: _pixKeyFormatters(),
+              ),
               const SizedBox(height: 12),
-              _input(pixHolderName, 'Nome do titular da conta Pix'),
+              _input(
+                pixHolderName,
+                'Nome do titular da conta Pix *',
+                focusNode: _focus['pixHolderName'],
+                textCapitalization: TextCapitalization.words,
+              ),
               const SizedBox(height: 12),
               _input(
                 pixHolderDocument,
-                'CPF/CNPJ do titular Pix',
+                'CPF/CNPJ do titular Pix *',
                 keyboardType: TextInputType.number,
+                focusNode: _focus['pixHolderDocument'],
+                inputFormatters: const [_CpfCnpjFormatter()],
               ),
               const SizedBox(height: 22),
               const Text(
@@ -827,15 +924,45 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
               ),
               const SizedBox(height: 10),
-              _input(password, 'Senha (mínimo 8 caracteres)', obscureText: true),
+              _input(
+                password,
+                'Senha (mínimo 8 caracteres) *',
+                obscureText: !passwordVisible,
+                focusNode: _focus['password'],
+                suffixIcon: IconButton(
+                  tooltip: passwordVisible ? 'Ocultar senha' : 'Mostrar senha',
+                  onPressed: () =>
+                      setState(() => passwordVisible = !passwordVisible),
+                  icon: Icon(
+                    passwordVisible
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                  ),
+                ),
+              ),
               const SizedBox(height: 12),
               _input(
                 passwordConfirm,
-                'Confirmar senha',
-                obscureText: true,
+                'Confirmar senha *',
+                obscureText: !passwordConfirmVisible,
+                focusNode: _focus['passwordConfirm'],
+                suffixIcon: IconButton(
+                  tooltip: passwordConfirmVisible
+                      ? 'Ocultar confirmação'
+                      : 'Mostrar confirmação',
+                  onPressed: () => setState(
+                    () => passwordConfirmVisible = !passwordConfirmVisible,
+                  ),
+                  icon: Icon(
+                    passwordConfirmVisible
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                  ),
+                ),
               ),
               const SizedBox(height: 18),
               CheckboxListTile(
+                key: _termsKey,
                 value: termsAccepted,
                 contentPadding: EdgeInsets.zero,
                 controlAffinity: ListTileControlAffinity.leading,
@@ -858,6 +985,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
               ),
               CheckboxListTile(
+                key: _privacyKey,
                 value: privacyAccepted,
                 contentPadding: EdgeInsets.zero,
                 controlAffinity: ListTileControlAffinity.leading,
@@ -880,6 +1008,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
               ),
               CheckboxListTile(
+                key: _whatsappKey,
                 value: whatsappConsent,
                 contentPadding: EdgeInsets.zero,
                 controlAffinity: ListTileControlAffinity.leading,
