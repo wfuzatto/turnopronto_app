@@ -19,5 +19,4 @@ flutter pub get
 flutter analyze
 
 Write-Host "\nProjeto pronto." -ForegroundColor Green
-Write-Host "Modo demo: flutter run"
-Write-Host "API XAMPP: flutter run --dart-define=API_URL=http://IP_DO_PC/turnopronto_web/api/v1"
+Write-Host "Execute: flutter run"\nWrite-Host "API fixa: https://turnopronto.com.br/api/v1"
