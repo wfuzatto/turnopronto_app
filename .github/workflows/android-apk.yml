@@ -72,19 +72,42 @@ jobs:
       - name: Tests
         run: flutter test
 
-      - name: Configure persistent Android signing
+      - name: Check persistent signing availability
+        id: signing
         shell: bash
         run: |
           set -euo pipefail
-
+          missing=()
           for value in ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD; do
             if [[ -z "${!value:-}" ]]; then
-              echo "Missing required GitHub Actions secret: $value" >&2
-              echo "A stable signing key is required so a new APK can update the installed TurnoPronto app." >&2
-              exit 1
+              missing+=("$value")
             fi
           done
 
+          if (( ${#missing[@]} > 0 )); then
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=Signed APK not published::Persistent Android signing is not configured yet. CI validation passed; release steps were skipped."
+            {
+              echo "## Android release"
+              echo
+              echo "Code analysis and tests passed."
+              echo
+              echo "Signed APK publication was skipped because these repository secrets are still missing:"
+              for value in "${missing[@]}"; do
+                echo "- `$value`"
+              done
+              echo
+              echo "Run `scripts/setup_android_signing.ps1` from an authenticated GitHub CLI session to configure them safely."
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Configure persistent Android signing
+        if: steps.signing.outputs.available == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
           printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/turnopronto-upload.jks
 
           cat > android/key.properties <<EOF
@@ -137,14 +160,15 @@ jobs:
 
           grep -q 'signingConfig = signingConfigs.getByName("release")' android/app/build.gradle.kts
 
-
       - name: Build signed release APK
+        if: steps.signing.outputs.available == 'true'
         shell: bash
         run: |
           set -euo pipefail
           flutter build apk --release             --build-name="0.1.${GITHUB_RUN_NUMBER}"             --build-number="${GITHUB_RUN_NUMBER}"
 
       - name: Verify APK identity and signature
+        if: steps.signing.outputs.available == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -156,6 +180,7 @@ jobs:
           cp "$APK" build/TurnoPronto.apk
 
       - name: Publish stable test download
+        if: steps.signing.outputs.available == 'true'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -174,6 +199,7 @@ jobs:
           fi
 
       - name: Upload APK
+        if: steps.signing.outputs.available == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: TurnoPronto-APK
