@@ -10,16 +10,10 @@ class ApiException implements Exception {
 }
 
 class ApiService {
-  ApiService({String? baseUrl})
-      : _baseUrl = _normalizeBaseUrl(
-          baseUrl ??
-              const String.fromEnvironment(
-                'API_URL',
-                defaultValue: 'https://turnopronto1.websiteseguro.com/api/v1',
-              ),
-        );
+  ApiService();
 
-  String _baseUrl;
+  static const String _baseUrl = 'https://turnopronto.com.br/api/v1';
+
   String? token;
   bool demoMode = false;
   Map<String, dynamic>? currentUser;
@@ -27,27 +21,6 @@ class ApiService {
 
   String get baseUrl => _baseUrl;
   bool get authenticated => demoMode || (token != null && token!.isNotEmpty);
-
-  static String _normalizeBaseUrl(String value) {
-    var url = value.trim();
-    while (url.endsWith('/')) {
-      url = url.substring(0, url.length - 1);
-    }
-    return url;
-  }
-
-  void setBaseUrl(String value) {
-    final normalized = _normalizeBaseUrl(value);
-    final uri = Uri.tryParse(normalized);
-    if (uri == null ||
-        !uri.hasScheme ||
-        !['http', 'https'].contains(uri.scheme)) {
-      throw ApiException(
-        'Informe uma URL válida, começando com http:// ou https://',
-      );
-    }
-    _baseUrl = normalized;
-  }
 
   Future<Map<String, dynamic>> _request(
     String method,
