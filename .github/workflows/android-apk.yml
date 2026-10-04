@@ -35,15 +35,12 @@ jobs:
       - name: Generate Android shell
         run: flutter create --platforms=android --project-name turnopronto_app --org br.com.turnopronto .
 
-      - name: Allow local HTTP for test APK
+      - name: Set Android app label
         run: |
           python3 - <<'PY'
           from pathlib import Path
           p = Path("android/app/src/main/AndroidManifest.xml")
-          s = p.read_text()
-          if 'android:usesCleartextTraffic=' not in s:
-              s = s.replace('<application', '<application android:usesCleartextTraffic="true"', 1)
-          s = s.replace('android:label="turnopronto_app"', 'android:label="TurnoPronto"')
+          s = p.read_text().replace('android:label="turnopronto_app"', 'android:label="TurnoPronto"')
           p.write_text(s)
           PY
 
@@ -57,9 +54,7 @@ jobs:
         run: flutter test
 
       - name: Build debug APK
-        env:
-          API_URL: ${{ vars.API_URL || 'https://turnopronto1.websiteseguro.com/api/v1' }}
-        run: flutter build apk --debug --dart-define=API_URL="$API_URL"
+        run: flutter build apk --debug
 
       - name: Prepare artifact
         run: |
