@@ -1,7 +1,7 @@
 name: turnopronto_app
 description: App Android/iOS para profissionais da plataforma TurnoPronto.
 publish_to: none
-version: 0.3.0+3
+version: 0.4.0+4
 
 environment:
   sdk: '>=3.5.0 <4.0.0'
@@ -10,6 +10,7 @@ dependencies:
   flutter:
     sdk: flutter
   geolocator: ^13.0.4
+  flutter_svg: ^2.0.17
 
 dev_dependencies:
   flutter_test:
@@ -17,3 +18,5 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/brand/logo.svg
