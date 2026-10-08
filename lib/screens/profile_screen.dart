@@ -84,18 +84,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
           final name = (user['name'] ?? 'Profissional').toString();
           final headline =
               (profile['headline'] ?? 'Profissional TurnoPronto').toString();
-          final reliability = _number(
-            profile['reliability_score'],
-            100,
-          ).round();
-          final attendance = _number(
-            profile['attendance_score'],
-            100,
-          ).round();
-          final punctuality = _number(
-            profile['punctuality_score'],
-            100,
-          ).round();
+          final feedbackCount = int.tryParse((profile['company_feedback_count'] ?? 0).toString()) ?? 0;
+          final hasFeedback = profile['has_company_feedback'] == true || feedbackCount > 0;
+          final reliability = _number(profile['reliability_score'], 0).round();
+          final attendance = _number(profile['attendance_score'], 0).round();
+          final punctuality = _number(profile['punctuality_score'], 0).round();
           final completed = int.tryParse(
                 (profile['completed_shifts'] ?? 0).toString(),
               ) ??
@@ -155,7 +148,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const SizedBox(height: 10),
                     _StatusPill(
                       status: status,
-                      reliability: reliability,
+                      reliability: hasFeedback ? reliability : null,
                     ),
                     const SizedBox(height: 18),
                     Row(
@@ -163,7 +156,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         Expanded(
                           child: _Score(
                             label: 'Presença',
-                            value: attendance.toString() + '%',
+                            value: hasFeedback ? attendance.toString() + '%' : '—',
                             icon: Icons.groups_rounded,
                           ),
                         ),
@@ -171,7 +164,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         Expanded(
                           child: _Score(
                             label: 'Pontualidade',
-                            value: punctuality.toString() + '%',
+                            value: hasFeedback ? punctuality.toString() + '%' : '—',
                             icon: Icons.schedule_rounded,
                           ),
                         ),
@@ -267,7 +260,7 @@ class _StatusPill extends StatelessWidget {
   });
 
   final String status;
-  final int reliability;
+  final int? reliability;
 
   @override
   Widget build(BuildContext context) {
@@ -298,7 +291,9 @@ class _StatusPill extends StatelessWidget {
           const SizedBox(width: 5),
           Text(
             verified
-                ? 'Confiabilidade ' + reliability.toString() + '%'
+                ? (reliability == null
+                    ? 'Aguardando primeira avaliação'
+                    : 'Confiabilidade ' + reliability.toString() + '%')
                 : 'Perfil em verificação',
             style: TextStyle(
               color: verified
