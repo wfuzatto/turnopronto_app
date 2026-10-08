@@ -720,6 +720,52 @@ class _JobMark extends StatelessWidget {
         : (isService
             ? const [Color(0xFF8E1937), Color(0xFF5F1027)]
             : const [Color(0xFFFFBC38), Color(0xFFF49B10)]);
+    final radius=BorderRadius.circular(size * .22);
+    if(job.imageUrl.isNotEmpty){
+      return ClipRRect(
+        borderRadius: radius,
+        child: Image.network(
+          job.imageUrl,
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => _JobMarkFallback(
+            size: size,
+            radius: radius,
+            colors: colors,
+            icon: isKitchen
+                ? Icons.local_florist_outlined
+                : (isService ? Icons.local_cafe_outlined : Icons.restaurant_menu),
+          ),
+        ),
+      );
+    }
+    return _JobMarkFallback(
+      size: size,
+      radius: radius,
+      colors: colors,
+      icon: isKitchen
+          ? Icons.local_florist_outlined
+          : (isService ? Icons.local_cafe_outlined : Icons.restaurant_menu),
+    );
+  }
+}
+
+class _JobMarkFallback extends StatelessWidget {
+  const _JobMarkFallback({
+    required this.size,
+    required this.radius,
+    required this.colors,
+    required this.icon,
+  });
+
+  final double size;
+  final BorderRadius radius;
+  final List<Color> colors;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       width: size,
       height: size,
@@ -729,15 +775,9 @@ class _JobMark extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(size * .22),
+        borderRadius: radius,
       ),
-      child: Icon(
-        isKitchen
-            ? Icons.local_florist_outlined
-            : (isService ? Icons.local_cafe_outlined : Icons.restaurant_menu),
-        color: Colors.white,
-        size: size * .38,
-      ),
+      child: Icon(icon, color: Colors.white, size: size * .38),
     );
   }
 }
