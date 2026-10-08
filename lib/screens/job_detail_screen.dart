@@ -4,6 +4,7 @@ import '../services/api_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/job_card.dart';
 import 'current_shift_screen.dart';
+import 'payment_setup_screen.dart';
 
 class JobDetailScreen extends StatefulWidget {
   const JobDetailScreen({super.key, required this.api, required this.job});
@@ -58,6 +59,19 @@ class _JobDetailScreenState extends State<JobDetailScreen>{
   Future<void> accept() async {
     setState(() => accepting = true);
     try {
+      final onboarding = await widget.api.onboarding();
+      if (onboarding['payment_complete'] != true) {
+        if (mounted) setState(() => accepting = false);
+        if (!mounted) return;
+        final completed = await Navigator.of(context).push<bool>(
+          MaterialPageRoute(
+            builder: (_) => PaymentSetupScreen(api: widget.api),
+          ),
+        );
+        if (completed != true || !mounted) return;
+        setState(() => accepting = true);
+      }
+
       final result = await widget.api.accept(currentJob.id);
       if (!mounted) return;
 
