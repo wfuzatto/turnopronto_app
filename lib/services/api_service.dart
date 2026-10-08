@@ -89,6 +89,23 @@ class ApiService {
         .toList();
   }
 
+  Future<Map<String, dynamic>> appearance() async {
+    if (demoMode) {
+      return {
+        'web_skin': 'modern',
+        'app_skin': 'modern',
+        'ab_test': false,
+        'seasonal_campaign': false,
+        'different_per_platform': true,
+      };
+    }
+    final data = await _request('GET', '/appearance');
+    final raw = data['data'];
+    return raw is Map
+        ? Map<String, dynamic>.from(raw)
+        : <String, dynamic>{'app_skin': 'modern'};
+  }
+
   Future<Map<String, dynamic>> startRegistration(
     Map<String, dynamic> payload,
   ) async {
