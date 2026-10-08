@@ -163,9 +163,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   String _digits(String value) => value.replaceAll(RegExp(r'\D'), '');
 
-  String _rgValue(String value) =>
-      value.toUpperCase().replaceAll(RegExp(r'[^0-9A-Z]'), '');
-
   bool _validEmail(String value) =>
       RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(value.trim());
 
@@ -258,22 +255,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
         _validationError('CPF inválido.', focusNode: _focus['cpf']);
         return false;
       }
-      final cleanRg = _rgValue(rg.text);
-      if (cleanRg.length < 7 || cleanRg.length > 12) {
-        _validationError('Informe um RG válido.', focusNode: _focus['rg']);
-        return false;
-      }
       if (birthDate.text.trim().isEmpty) {
         _validationError(
           'Informe sua data de nascimento.',
           focusNode: _focus['birthDate'],
-        );
-        return false;
-      }
-      if (headline.text.trim().isEmpty) {
-        _validationError(
-          'Informe sua atividade principal.',
-          focusNode: _focus['headline'],
         );
         return false;
       }
@@ -312,84 +297,87 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
     }
 
-    if (_digits(postalCode.text).length != 8) {
-      _validationError('Informe um CEP válido.', focusNode: _focus['postalCode']);
-      return false;
-    }
-    if (address.text.trim().isEmpty) {
-      _validationError('Informe o endereço.', focusNode: _focus['address']);
-      return false;
-    }
-    if (city.text.trim().isEmpty) {
-      _validationError('Informe a cidade.', focusNode: _focus['city']);
-      return false;
-    }
-    if (!RegExp(r'^[A-Za-z]{2}$').hasMatch(state.text.trim())) {
-      _validationError('Informe a UF com 2 letras.', focusNode: _focus['state']);
-      return false;
-    }
+    if (role != 'professional') {
+      if (_digits(postalCode.text).length != 8) {
+        _validationError('Informe um CEP válido.', focusNode: _focus['postalCode']);
+        return false;
+      }
+      if (address.text.trim().isEmpty) {
+        _validationError('Informe o endereço.', focusNode: _focus['address']);
+        return false;
+      }
+      if (city.text.trim().isEmpty) {
+        _validationError('Informe a cidade.', focusNode: _focus['city']);
+        return false;
+      }
+      if (!RegExp(r'^[A-Za-z]{2}$').hasMatch(state.text.trim())) {
+        _validationError('Informe a UF com 2 letras.', focusNode: _focus['state']);
+        return false;
+      }
 
-    if (pixKey.text.trim().isEmpty) {
-      _validationError('Informe a chave Pix.', focusNode: _focus['pixKey']);
-      return false;
-    }
-    if (pixType == 'cpf' && !_validCpf(pixKey.text)) {
-      _validationError('A chave Pix CPF é inválida.', focusNode: _focus['pixKey']);
-      return false;
-    }
-    if (pixType == 'cnpj' && !_validCnpj(pixKey.text)) {
-      _validationError('A chave Pix CNPJ é inválida.', focusNode: _focus['pixKey']);
-      return false;
-    }
-    if (pixType == 'email' && !_validEmail(pixKey.text)) {
-      _validationError(
-        'A chave Pix de e-mail é inválida.',
-        focusNode: _focus['pixKey'],
-      );
-      return false;
-    }
-    if (pixType == 'phone') {
-      final pixPhoneDigits = _digits(pixKey.text);
-      if (pixPhoneDigits.length != 10 && pixPhoneDigits.length != 11) {
+      if (pixKey.text.trim().isEmpty) {
+        _validationError('Informe a chave Pix.', focusNode: _focus['pixKey']);
+        return false;
+      }
+      if (pixType == 'cpf' && !_validCpf(pixKey.text)) {
+        _validationError('A chave Pix CPF é inválida.', focusNode: _focus['pixKey']);
+        return false;
+      }
+      if (pixType == 'cnpj' && !_validCnpj(pixKey.text)) {
+        _validationError('A chave Pix CNPJ é inválida.', focusNode: _focus['pixKey']);
+        return false;
+      }
+      if (pixType == 'email' && !_validEmail(pixKey.text)) {
         _validationError(
-          'A chave Pix de telefone é inválida.',
+          'A chave Pix de e-mail é inválida.',
           focusNode: _focus['pixKey'],
         );
         return false;
       }
-    }
+      if (pixType == 'phone') {
+        final pixPhoneDigits = _digits(pixKey.text);
+        if (pixPhoneDigits.length != 10 && pixPhoneDigits.length != 11) {
+          _validationError(
+            'A chave Pix de telefone é inválida.',
+            focusNode: _focus['pixKey'],
+          );
+          return false;
+        }
+      }
 
-    if (pixHolderName.text.trim().length < 3) {
-      _validationError(
-        'Informe o nome do titular da conta Pix.',
-        focusNode: _focus['pixHolderName'],
-      );
-      return false;
-    }
-
-    final holderDigits = _digits(pixHolderDocument.text);
-    if (holderDigits.length == 11) {
-      if (!_validCpf(holderDigits)) {
+      if (pixHolderName.text.trim().length < 3) {
         _validationError(
-          'CPF do titular do Pix inválido.',
+          'Informe o nome do titular da conta Pix.',
+          focusNode: _focus['pixHolderName'],
+        );
+        return false;
+      }
+
+      final holderDigits = _digits(pixHolderDocument.text);
+      if (holderDigits.length == 11) {
+        if (!_validCpf(holderDigits)) {
+          _validationError(
+            'CPF do titular do Pix inválido.',
+            focusNode: _focus['pixHolderDocument'],
+          );
+          return false;
+        }
+      } else if (holderDigits.length == 14) {
+        if (!_validCnpj(holderDigits)) {
+          _validationError(
+            'CNPJ do titular do Pix inválido.',
+            focusNode: _focus['pixHolderDocument'],
+          );
+          return false;
+        }
+      } else {
+        _validationError(
+          'Informe o CPF ou CNPJ do titular do Pix.',
           focusNode: _focus['pixHolderDocument'],
         );
         return false;
       }
-    } else if (holderDigits.length == 14) {
-      if (!_validCnpj(holderDigits)) {
-        _validationError(
-          'CNPJ do titular do Pix inválido.',
-          focusNode: _focus['pixHolderDocument'],
-        );
-        return false;
-      }
-    } else {
-      _validationError(
-        'Informe o CPF ou CNPJ do titular do Pix.',
-        focusNode: _focus['pixHolderDocument'],
-      );
-      return false;
+
     }
 
     if (password.text.length < 8) {
@@ -711,15 +699,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     _DigitsMaskFormatter('###.###.###-##', 11),
                   ],
                 ),
-                const SizedBox(height: 12),
-                _input(
-                  rg,
-                  'RG *',
-                  keyboardType: TextInputType.text,
-                  focusNode: _focus['rg'],
-                  inputFormatters: const [_RgMaskFormatter()],
-                  textCapitalization: TextCapitalization.characters,
-                ),
+
                 const SizedBox(height: 12),
                 _input(
                   birthDate,
@@ -729,13 +709,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   focusNode: _focus['birthDate'],
                   onTap: _pickBirthDate,
                 ),
-                const SizedBox(height: 12),
-                _input(
-                  headline,
-                  'Atividade principal *',
-                  focusNode: _focus['headline'],
-                  textCapitalization: TextCapitalization.sentences,
-                ),
+
                 const SizedBox(height: 18),
                 Text(
                   'Funções de interesse *',
@@ -807,114 +781,134 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   textCapitalization: TextCapitalization.words,
                 ),
               ],
-              const SizedBox(height: 22),
-              const Text(
-                'Endereço',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              const SizedBox(height: 10),
-              _input(
-                postalCode,
-                'CEP *',
-                keyboardType: TextInputType.number,
-                focusNode: _focus['postalCode'],
-                inputFormatters: const [
-                  _DigitsMaskFormatter('#####-###', 8),
-                ],
-              ),
-              const SizedBox(height: 12),
-              _input(
-                address,
-                'Endereço *',
-                focusNode: _focus['address'],
-                textCapitalization: TextCapitalization.words,
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _input(
-                      city,
-                      'Cidade *',
-                      focusNode: _focus['city'],
-                      textCapitalization: TextCapitalization.words,
+              if (isProfessional) ...[
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: TpColors.blueSoft,
+                    borderRadius: BorderRadius.all(Radius.circular(12)),
+                  ),
+                  child: Text(
+                    'Agora pedimos apenas o essencial. RG, endereço e dados Pix serão solicitados depois, quando forem necessários para confirmar um turno.',
+                    style: TextStyle(
+                      color: TpColors.text,
+                      fontSize: 10,
+                      height: 1.4,
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  SizedBox(
-                    width: 90,
-                    child: _input(
-                      state,
-                      'UF *',
-                      maxLength: 2,
-                      keyboardType: TextInputType.text,
-                      focusNode: _focus['state'],
-                      inputFormatters: const [_UpperCaseFormatter()],
+                ),
+              ] else ...[
+                const SizedBox(height: 22),
+                const Text(
+                  'Endereço',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                _input(
+                  postalCode,
+                  'CEP *',
+                  keyboardType: TextInputType.number,
+                  focusNode: _focus['postalCode'],
+                  inputFormatters: const [
+                    _DigitsMaskFormatter('#####-###', 8),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                _input(
+                  address,
+                  'Endereço *',
+                  focusNode: _focus['address'],
+                  textCapitalization: TextCapitalization.words,
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _input(
+                        city,
+                        'Cidade *',
+                        focusNode: _focus['city'],
+                        textCapitalization: TextCapitalization.words,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 22),
-              Text(
-                isProfessional
-                    ? 'Pix para receber pagamentos'
-                    : 'Pix para devoluções/reembolsos',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w900,
+                    const SizedBox(width: 10),
+                    SizedBox(
+                      width: 90,
+                      child: _input(
+                        state,
+                        'UF *',
+                        maxLength: 2,
+                        keyboardType: TextInputType.text,
+                        focusNode: _focus['state'],
+                        inputFormatters: const [_UpperCaseFormatter()],
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(height: 10),
-              DropdownButtonFormField<String>(
-                initialValue: pixType,
-                decoration: const InputDecoration(
-                  labelText: 'Tipo da chave Pix',
-                ),
-                items: const [
-                  DropdownMenuItem(value: 'cpf', child: Text('CPF')),
-                  DropdownMenuItem(value: 'cnpj', child: Text('CNPJ')),
-                  DropdownMenuItem(value: 'email', child: Text('E-mail')),
-                  DropdownMenuItem(value: 'phone', child: Text('Telefone')),
-                  DropdownMenuItem(
-                    value: 'random',
-                    child: Text('Chave aleatória'),
+                const SizedBox(height: 22),
+                Text(
+                  isProfessional
+                      ? 'Pix para receber pagamentos'
+                      : 'Pix para devoluções/reembolsos',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
                   ),
-                ],
-                onChanged: (value) {
-                  if (value != null && value != pixType) {
-                    setState(() {
-                      pixType = value;
-                      pixKey.clear();
-                    });
-                  }
-                },
-              ),
-              const SizedBox(height: 12),
-              _input(
-                pixKey,
-                'Chave Pix *',
-                keyboardType: _pixKeyKeyboardType(),
-                focusNode: _focus['pixKey'],
-                inputFormatters: _pixKeyFormatters(),
-              ),
-              const SizedBox(height: 12),
-              _input(
-                pixHolderName,
-                'Nome do titular da conta Pix *',
-                focusNode: _focus['pixHolderName'],
-                textCapitalization: TextCapitalization.words,
-              ),
-              const SizedBox(height: 12),
-              _input(
-                pixHolderDocument,
-                'CPF/CNPJ do titular Pix *',
-                keyboardType: TextInputType.number,
-                focusNode: _focus['pixHolderDocument'],
-                inputFormatters: const [_CpfCnpjFormatter()],
-              ),
+                ),
+                const SizedBox(height: 10),
+                DropdownButtonFormField<String>(
+                  initialValue: pixType,
+                  decoration: const InputDecoration(
+                    labelText: 'Tipo da chave Pix',
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 'cpf', child: Text('CPF')),
+                    DropdownMenuItem(value: 'cnpj', child: Text('CNPJ')),
+                    DropdownMenuItem(value: 'email', child: Text('E-mail')),
+                    DropdownMenuItem(value: 'phone', child: Text('Telefone')),
+                    DropdownMenuItem(
+                      value: 'random',
+                      child: Text('Chave aleatória'),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    if (value != null && value != pixType) {
+                      setState(() {
+                        pixType = value;
+                        pixKey.clear();
+                      });
+                    }
+                  },
+                ),
+                const SizedBox(height: 12),
+                _input(
+                  pixKey,
+                  'Chave Pix *',
+                  keyboardType: _pixKeyKeyboardType(),
+                  focusNode: _focus['pixKey'],
+                  inputFormatters: _pixKeyFormatters(),
+                ),
+                const SizedBox(height: 12),
+                _input(
+                  pixHolderName,
+                  'Nome do titular da conta Pix *',
+                  focusNode: _focus['pixHolderName'],
+                  textCapitalization: TextCapitalization.words,
+                ),
+                const SizedBox(height: 12),
+                _input(
+                  pixHolderDocument,
+                  'CPF/CNPJ do titular Pix *',
+                  keyboardType: TextInputType.number,
+                  focusNode: _focus['pixHolderDocument'],
+                  inputFormatters: const [_CpfCnpjFormatter()],
+                ),
+
+              ],
               const SizedBox(height: 22),
               const Text(
                 'Segurança da conta',
@@ -1264,34 +1258,6 @@ class _CpfCnpjFormatter extends TextInputFormatter {
         text: digits,
         selection: TextSelection.collapsed(offset: digits.length),
       ),
-    );
-  }
-}
-
-class _RgMaskFormatter extends TextInputFormatter {
-  const _RgMaskFormatter();
-
-  @override
-  TextEditingValue formatEditUpdate(
-    TextEditingValue oldValue,
-    TextEditingValue newValue,
-  ) {
-    var raw = newValue.text
-        .toUpperCase()
-        .replaceAll(RegExp(r'[^0-9A-Z]'), '');
-    if (raw.length > 9) raw = raw.substring(0, 9);
-
-    final buffer = StringBuffer();
-    for (var i = 0; i < raw.length; i++) {
-      if (i == 2 || i == 5) buffer.write('.');
-      if (i == 8) buffer.write('-');
-      buffer.write(raw[i]);
-    }
-
-    final formatted = buffer.toString();
-    return TextEditingValue(
-      text: formatted,
-      selection: TextSelection.collapsed(offset: formatted.length),
     );
   }
 }
