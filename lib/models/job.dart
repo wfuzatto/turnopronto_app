@@ -1,7 +1,16 @@
+String _normalizeJobImageUrl(dynamic raw) {
+  final value = (raw ?? '').toString().trim();
+  if (value.isEmpty) return '';
+  if (value.startsWith('http://') || value.startsWith('https://')) return value;
+  if (value.startsWith('/')) return 'https://turnopronto.com.br' + value;
+  return 'https://turnopronto.com.br/' + value;
+}
+
 class Job {
   final int id;
   final String role;
   final String title;
+  final String imageUrl;
   final String company;
   final DateTime startsAt;
   final DateTime endsAt;
@@ -25,6 +34,7 @@ class Job {
     required this.id,
     required this.role,
     this.title = '',
+    this.imageUrl = '',
     required this.company,
     required this.startsAt,
     required this.endsAt,
@@ -59,6 +69,7 @@ class Job {
         id: id,
         role: role,
         title: title,
+        imageUrl: imageUrl,
         company: company,
         startsAt: startsAt,
         endsAt: endsAt,
@@ -83,6 +94,7 @@ class Job {
         id: int.parse(json['id'].toString()),
         role: (json['category_name'] ?? json['title'] ?? 'Turno').toString(),
         title: (json['title'] ?? json['category_name'] ?? 'Turno').toString(),
+        imageUrl: _normalizeJobImageUrl(json['image_url']),
         company: (json['company_name'] ?? 'Empresa TurnoPronto').toString(),
         startsAt: DateTime.parse(json['starts_at'].toString()),
         endsAt: DateTime.parse(json['ends_at'].toString()),
