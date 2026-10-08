@@ -783,13 +783,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ],
               if (isProfessional) ...[
                 const SizedBox(height: 16),
-                const Container(
-                  padding: EdgeInsets.all(12),
-                  decoration: BoxDecoration(
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: const BoxDecoration(
                     color: TpColors.blueSoft,
                     borderRadius: BorderRadius.all(Radius.circular(12)),
                   ),
-                  child: Text(
+                  child: const Text(
                     'Agora pedimos apenas o essencial. RG, endereço e dados Pix serão solicitados depois, quando forem necessários para confirmar um turno.',
                     style: TextStyle(
                       color: TpColors.text,
