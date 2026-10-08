@@ -783,8 +783,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ],
               if (isProfessional) ...[
                 const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(12),
+                const Container(
+                  padding: EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: TpColors.blueSoft,
                     borderRadius: BorderRadius.all(Radius.circular(12)),
