@@ -1,6 +1,7 @@
 class Job {
   final int id;
   final String role;
+  final String title;
   final String company;
   final DateTime startsAt;
   final DateTime endsAt;
@@ -23,6 +24,7 @@ class Job {
   const Job({
     required this.id,
     required this.role,
+    this.title = '',
     required this.company,
     required this.startsAt,
     required this.endsAt,
@@ -56,6 +58,7 @@ class Job {
       Job(
         id: id,
         role: role,
+        title: title,
         company: company,
         startsAt: startsAt,
         endsAt: endsAt,
@@ -79,6 +82,7 @@ class Job {
   factory Job.fromJson(Map<String, dynamic> json) => Job(
         id: int.parse(json['id'].toString()),
         role: (json['category_name'] ?? json['title'] ?? 'Turno').toString(),
+        title: (json['title'] ?? json['category_name'] ?? 'Turno').toString(),
         company: (json['company_name'] ?? 'Empresa TurnoPronto').toString(),
         startsAt: DateTime.parse(json['starts_at'].toString()),
         endsAt: DateTime.parse(json['ends_at'].toString()),
