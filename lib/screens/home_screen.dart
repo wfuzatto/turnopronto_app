@@ -52,6 +52,63 @@ class _HomeScreenState extends State<HomeScreen> {
     await future;
   }
 
+  Future<void> _useManualLocation() async {
+    final controller = TextEditingController();
+    final address = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Informar ponto de partida'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          textInputAction: TextInputAction.done,
+          decoration: const InputDecoration(
+            labelText: 'Rua, número, cidade - UF',
+            hintText: 'Ex.: R. Cel. Ferraz, 285, São Lourenço - MG',
+          ),
+          onSubmitted: (value) =>
+              Navigator.of(dialogContext).pop(value.trim()),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () =>
+                Navigator.of(dialogContext).pop(controller.text.trim()),
+            child: const Text('Usar endereço'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (address == null || address.trim().isEmpty) return;
+
+    setState(() {
+      future = () async {
+        final dashboard = await widget.api.home();
+        final jobs = await widget.api.opportunities();
+        final located = await location.enrichJobsFromAddress(jobs, address);
+        return _HomePayload(
+          dashboard: dashboard,
+          jobs: located.jobs,
+          locationMessage: located.message,
+        );
+      }();
+    });
+
+    try {
+      await future;
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+      );
+      await refresh();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator(
@@ -210,28 +267,43 @@ class _HomeScreenState extends State<HomeScreen> {
                   color: TpColors.blueSoft,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Column(
                   children: [
-                    const Icon(
-                      Icons.location_on_rounded,
-                      color: TpColors.blue,
-                      size: 19,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        payload.locationMessage,
-                        style: const TextStyle(
-                          fontSize: 9.5,
-                          color: TpColors.text,
-                          height: 1.4,
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(
+                          Icons.location_on_rounded,
+                          color: TpColors.blue,
+                          size: 19,
                         ),
-                      ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            payload.locationMessage,
+                            style: const TextStyle(
+                              fontSize: 9.5,
+                              color: TpColors.text,
+                              height: 1.4,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    TextButton(
-                      onPressed: refresh,
-                      child: const Text('Atualizar'),
+                    const SizedBox(height: 7),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton.icon(
+                          onPressed: _useManualLocation,
+                          icon: const Icon(Icons.edit_location_alt_outlined, size: 16),
+                          label: const Text('Informar endereço'),
+                        ),
+                        TextButton(
+                          onPressed: refresh,
+                          child: const Text('Atualizar GPS'),
+                        ),
+                      ],
                     ),
                   ],
                 ),
