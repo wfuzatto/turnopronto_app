@@ -446,9 +446,7 @@ class _FeaturedJobCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        job.role.toLowerCase().contains('aux')
-                            ? 'Confeitaria'
-                            : job.role,
+                        job.title.trim().isEmpty ? job.role : job.title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
