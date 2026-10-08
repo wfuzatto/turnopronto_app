@@ -202,6 +202,40 @@ class ApiService {
     };
   }
 
+  Future<Map<String, dynamic>> onboarding() async {
+    if (demoMode) {
+      return {
+        'application_ready': false,
+        'can_apply': false,
+        'payment_complete': false,
+        'profile': currentProfile ?? <String, dynamic>{},
+      };
+    }
+    final data = await _request('GET', '/onboarding');
+    return Map<String, dynamic>.from(data['data'] as Map);
+  }
+
+  Future<Map<String, dynamic>> completePayment(
+    Map<String, dynamic> payload,
+  ) async {
+    if (demoMode) {
+      return {
+        'application_ready': true,
+        'can_apply': true,
+        'payment_complete': true,
+        'profile': currentProfile ?? <String, dynamic>{},
+      };
+    }
+    final data = await _request(
+      'POST',
+      '/onboarding/payment',
+      body: payload,
+    );
+    final result = Map<String, dynamic>.from(data['data'] as Map);
+    await me();
+    return result;
+  }
+
   Future<Map<String, dynamic>> home() async {
     if (demoMode) {
       return {
