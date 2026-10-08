@@ -58,24 +58,11 @@ void main() {
       '12345678901',
       '123.456.789-01',
     );
-    await expectMasked(
-      tester,
-      'RG *',
-      '123456789',
-      '12.345.678-9',
-    );
-    await expectMasked(
-      tester,
-      'CEP *',
-      '37460000',
-      '37460-000',
-    );
-    await expectMasked(
-      tester,
-      'CPF/CNPJ do titular Pix *',
-      '12345678901',
-      '123.456.789-01',
-    );
+    // O cadastro profissional inicial agora é leve. RG, endereço e Pix
+    // só aparecem quando forem necessários para confirmar o primeiro turno.
+    expect(fieldWithLabel('RG *'), findsNothing);
+    expect(fieldWithLabel('CEP *'), findsNothing);
+    expect(fieldWithLabel('CPF/CNPJ do titular Pix *'), findsNothing);
   });
 
   testWidgets('aplica máscara de CNPJ no cadastro empresarial', (tester) async {
