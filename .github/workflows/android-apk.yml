@@ -54,6 +54,14 @@ jobs:
           manifest = Path("android/app/src/main/AndroidManifest.xml")
           text = manifest.read_text()
           text = text.replace('android:label="turnopronto_app"', 'android:label="TurnoPronto"')
+          permissions = """    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+"""
+          if "android.permission.ACCESS_FINE_LOCATION" not in text:
+              text = text.replace("<manifest xmlns:android=", "<manifest xmlns:android=", 1)
+              end = text.find(">")
+              text = text[:end+1] + "\n" + permissions + text[end+1:]
           manifest.write_text(text)
 
           gradle = Path("android/app/build.gradle.kts")
