@@ -13,7 +13,10 @@ String tpDistance(Job job) {
   final text = value < 10
       ? value.toStringAsFixed(1).replaceAll('.', ',')
       : value.round().toString();
-  return text + ' km';
+  final suffix = job.distanceMode == 'road'
+      ? ' pela rota'
+      : (job.distanceMode == 'straight' ? ' em linha reta' : '');
+  return text + ' km' + suffix;
 }
 
 class JobCard extends StatelessWidget {
