@@ -24,6 +24,47 @@ class LocationService {
   static const _nominatimBase = 'https://nominatim.openstreetmap.org';
 
   Future<OpportunityLocationResult> enrichJobs(List<Job> jobs) async {
+    final position = await _position();
+    return _enrichFromOrigin(
+      jobs,
+      _Origin(
+        latitude: position.latitude,
+        longitude: position.longitude,
+        accuracy: position.accuracy,
+        manual: false,
+      ),
+    );
+  }
+
+  Future<OpportunityLocationResult> enrichJobsFromAddress(
+    List<Job> jobs,
+    String address,
+  ) async {
+    final normalized = address.trim();
+    if (normalized.length < 5) {
+      throw Exception('Informe rua, número, cidade e UF.');
+    }
+    final point = await _geocodeText(normalized);
+    if (point == null) {
+      throw Exception(
+        'Não foi possível localizar esse endereço. Inclua número, cidade e UF.',
+      );
+    }
+    return _enrichFromOrigin(
+      jobs,
+      _Origin(
+        latitude: point.$1,
+        longitude: point.$2,
+        accuracy: 0,
+        manual: true,
+      ),
+    );
+  }
+
+  Future<OpportunityLocationResult> _enrichFromOrigin(
+    List<Job> jobs,
+    _Origin origin,
+  ) async {
     if (jobs.isEmpty) {
       return const OpportunityLocationResult(
         jobs: <Job>[],
@@ -32,7 +73,6 @@ class LocationService {
       );
     }
 
-    final position = await _position();
     final resolved = <_ResolvedJob>[];
     final untouched = <int, Job>{};
 
@@ -64,12 +104,12 @@ class LocationService {
       }
     }
 
-    final routeDistances = await _valhallaDistances(position, resolved);
+    final routeDistances = await _valhallaDistances(origin, resolved);
     final missing = resolved
         .where((item) => !routeDistances.containsKey(item.index))
         .toList();
     if (missing.isNotEmpty) {
-      final osrm = await _osrmDistances(position, missing);
+      final osrm = await _osrmDistances(origin, missing);
       routeDistances.addAll(osrm);
     }
 
@@ -84,8 +124,8 @@ class LocationService {
       } else {
         output[item.index] = item.job.copyWith(
           distanceKm: _haversine(
-            position.latitude,
-            position.longitude,
+            origin.latitude,
+            origin.longitude,
             item.latitude,
             item.longitude,
           ),
@@ -101,17 +141,19 @@ class LocationService {
       return da.compareTo(db);
     });
 
-    final accuracy = position.accuracy;
+    final accuracy = origin.accuracy;
     final accuracyLabel = accuracy >= 1000
         ? '±' + (accuracy / 1000).toStringAsFixed(1) + ' km'
         : '±' + accuracy.round().toString() + ' m';
-    final message = accuracy > 500
-        ? 'Localização aproximada do aparelho (' +
-            accuracyLabel +
-            '). As distâncias usam rota rodoviária; ative localização precisa/GPS para melhorar.'
-        : 'Localização precisa (' +
-            accuracyLabel +
-            '). Distâncias calculadas por rota rodoviária.';
+    final message = origin.manual
+        ? 'Ponto de partida manual aplicado. Distâncias calculadas por rota rodoviária.'
+        : (accuracy > 500
+            ? 'Localização aproximada do aparelho (' +
+                accuracyLabel +
+                '). As distâncias usam rota rodoviária; ative localização precisa/GPS ou informe um endereço manual.'
+            : 'Localização precisa (' +
+                accuracyLabel +
+                '). Distâncias calculadas por rota rodoviária.');
 
     return OpportunityLocationResult(
       jobs: output,
@@ -157,8 +199,15 @@ class LocationService {
       if (job.state.trim().isNotEmpty) job.state.trim(),
       'Brasil',
     ].join(', ');
+    return _geocodeText(query);
+  }
 
-    if (query.length < 8) return null;
+  Future<(double, double)?> _geocodeText(String text) async {
+    var query = text.trim();
+    if (query.length < 5) return null;
+    if (!query.toLowerCase().contains('brasil')) {
+      query += ', Brasil';
+    }
 
     final client = HttpClient()..connectionTimeout = const Duration(seconds: 8);
     try {
@@ -195,7 +244,7 @@ class LocationService {
   }
 
   Future<Map<int, double>> _valhallaDistances(
-    Position origin,
+    _Origin origin,
     List<_ResolvedJob> items,
   ) async {
     final result = <int, double>{};
@@ -279,7 +328,7 @@ class LocationService {
   }
 
   Future<Map<int, double>> _osrmDistances(
-    Position origin,
+    _Origin origin,
     List<_ResolvedJob> items,
   ) async {
     final result = <int, double>{};
@@ -359,6 +408,20 @@ class LocationService {
   }
 
   double _rad(double degrees) => degrees * math.pi / 180;
+}
+
+class _Origin {
+  const _Origin({
+    required this.latitude,
+    required this.longitude,
+    required this.accuracy,
+    required this.manual,
+  });
+
+  final double latitude;
+  final double longitude;
+  final double accuracy;
+  final bool manual;
 }
 
 class _ResolvedJob {
