@@ -42,10 +42,12 @@ class ReputationScreen extends StatelessWidget {
                   .toList()
               : <Map<String, dynamic>>[];
 
-          final reliability = _num(profile['reliability_score'], 100);
-          final attendance = _num(profile['attendance_score'], 100);
-          final punctuality = _num(profile['punctuality_score'], 100);
-          final rating = _num(profile['rating'], 5);
+          final feedbackCount = int.tryParse((profile['company_feedback_count'] ?? 0).toString()) ?? 0;
+          final hasFeedback = profile['has_company_feedback'] == true || feedbackCount > 0;
+          final reliability = _num(profile['reliability_score'], 0);
+          final attendance = _num(profile['attendance_score'], 0);
+          final punctuality = _num(profile['punctuality_score'], 0);
+          final rating = _num(profile['rating'], 0);
 
           return ListView(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 40),
@@ -68,7 +70,7 @@ class ReputationScreen extends StatelessWidget {
                       ),
                       alignment: Alignment.center,
                       child: Text(
-                        reliability.round().toString() + '%',
+                        hasFeedback ? reliability.round().toString() + '%' : '—',
                         style: const TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.w900,
@@ -84,20 +86,38 @@ class ReputationScreen extends StatelessWidget {
                         fontWeight: FontWeight.w900,
                       ),
                     ),
+                    const SizedBox(height: 8),
+                    Text(
+                      hasFeedback
+                          ? feedbackCount.toString() + ' retorno(s) de empresa'
+                          : 'A pontuação será calculada somente após o primeiro turno concluído receber o retorno da empresa.',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: TpColors.muted,
+                        fontSize: 10,
+                        height: 1.4,
+                      ),
+                    ),
                     const SizedBox(height: 15),
-                    _Progress(
-                      label: 'Presença',
-                      value: attendance,
-                    ),
-                    _Progress(
-                      label: 'Pontualidade',
-                      value: punctuality,
-                    ),
-                    _Progress(
-                      label: 'Avaliação',
-                      value: rating * 20,
-                      suffix: rating.toStringAsFixed(1) + ' / 5',
-                    ),
+                    if (hasFeedback) ...[
+                      _Progress(
+                        label: 'Presença',
+                        value: attendance,
+                      ),
+                      _Progress(
+                        label: 'Pontualidade',
+                        value: punctuality,
+                      ),
+                      _Progress(
+                        label: 'Avaliação',
+                        value: rating * 20,
+                        suffix: rating.toStringAsFixed(1) + ' / 5',
+                      ),
+                    ] else ...[
+                      const _PendingMetric(label: 'Presença'),
+                      const _PendingMetric(label: 'Pontualidade'),
+                      const _PendingMetric(label: 'Avaliação'),
+                    ],
                   ],
                 ),
               ),
@@ -226,4 +246,48 @@ class _Progress extends StatelessWidget {
       ),
     );
   }
+}
+
+
+class _PendingMetric extends StatelessWidget {
+  const _PendingMetric({required this.label});
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(bottom: 11),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 10,
+                    color: TpColors.muted,
+                  ),
+                ),
+                const Spacer(),
+                const Text(
+                  '—',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 5),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: const LinearProgressIndicator(
+                value: 0,
+                minHeight: 7,
+                backgroundColor: TpColors.line,
+                color: TpColors.line,
+              ),
+            ),
+          ],
+        ),
+      );
 }
