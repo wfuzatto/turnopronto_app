@@ -137,7 +137,7 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       showDragHandle: true,
       backgroundColor: Colors.white,
-      builder: (context) => SafeArea(
+      builder: (context) => const SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(24, 12, 24, 30),
           child: Column(
