@@ -8,6 +8,7 @@ import 'package:turnopronto_app/services/api_service.dart';
 class _FakeApi extends ApiService {
   _FakeApi() {
     currentUser = {'name': 'Wesley'};
+    token = 'test-token';
   }
 
   @override
