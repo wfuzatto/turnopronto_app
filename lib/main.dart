@@ -53,7 +53,6 @@ class _TurnoProntoAppState extends State<TurnoProntoApp> {
       title: 'TurnoPronto',
       theme: turnoprontoTheme(),
       home: HomeShell(
-        key: ValueKey(api.authenticated),
         api: api,
         onLogout: onLogout,
         onRequireAuth: requireLogin,
