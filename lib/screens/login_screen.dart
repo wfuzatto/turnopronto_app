@@ -103,9 +103,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   TextField(
                     controller: email,
-                    keyboardType: TextInputType.emailAddress,
+                    keyboardType: TextInputType.text,
                     decoration: const InputDecoration(
-                      labelText: 'E-mail',
+                      labelText: 'CPF ou e-mail',
                     ),
                   ),
                   const SizedBox(height: 12),
