@@ -37,12 +37,24 @@ class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController searchController = TextEditingController();
   late Future<List<Job>> future;
   List<Job>? enrichedJobs;
+  late bool lastAuthenticated;
   final Set<int> sending = <int>{};
 
   @override
   void initState() {
     super.initState();
+    lastAuthenticated = widget.api.authenticated;
     future = load();
+  }
+
+  @override
+  void didUpdateWidget(covariant HomeScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (lastAuthenticated != widget.api.authenticated) {
+      lastAuthenticated = widget.api.authenticated;
+      enrichedJobs = null;
+      future = load();
+    }
   }
 
   @override
