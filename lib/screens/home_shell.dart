@@ -7,22 +7,52 @@ import 'earnings_screen.dart';
 import 'home_screen.dart';
 
 class HomeShell extends StatefulWidget {
-  const HomeShell({super.key, required this.api, required this.onLogout});
+  const HomeShell({
+    super.key,
+    required this.api,
+    required this.onLogout,
+    this.onRequireAuth,
+  });
+
   final ApiService api;
   final Future<void> Function() onLogout;
+  final Future<bool> Function()? onRequireAuth;
+
   @override
   State<HomeShell> createState() => _HomeShellState();
 }
 
 class _HomeShellState extends State<HomeShell> {
   int index = 0;
+
+  Future<void> selectTab(int next) async {
+    if (next >= 2 && !widget.api.authenticated) {
+      final request = widget.onRequireAuth;
+      if (request == null || !await request()) return;
+    }
+    if (mounted) setState(() => index = next);
+  }
+
   @override
   Widget build(BuildContext context) {
     final screens = [
-      HomeScreen(api: widget.api, onSeeAll: () => setState(() => index = 1)),
-      HomeScreen(api: widget.api, showAll: true),
-      AssignmentsScreen(api: widget.api),
-      EarningsScreen(api: widget.api),
+      HomeScreen(
+        api: widget.api,
+        onSeeAll: () => selectTab(1),
+        onRequireAuth: widget.onRequireAuth,
+      ),
+      HomeScreen(
+        api: widget.api,
+        showAll: true,
+        onRequireAuth: widget.onRequireAuth,
+      ),
+      if (widget.api.authenticated) ...[
+        AssignmentsScreen(api: widget.api),
+        EarningsScreen(api: widget.api),
+      ] else ...[
+        const SizedBox.shrink(),
+        const SizedBox.shrink(),
+      ],
     ];
     return Scaffold(
       backgroundColor: const Color(0xFFF6FAFF),
@@ -41,7 +71,11 @@ class _HomeShellState extends State<HomeShell> {
             color: Colors.white.withValues(alpha: .98),
             borderRadius: BorderRadius.circular(27),
             boxShadow: const [
-              BoxShadow(color: Color(0x1B143F6B), blurRadius: 26, offset: Offset(0, -3)),
+              BoxShadow(
+                color: Color(0x1B143F6B),
+                blurRadius: 26,
+                offset: Offset(0, -3),
+              ),
             ],
           ),
           child: Row(
@@ -50,25 +84,25 @@ class _HomeShellState extends State<HomeShell> {
                 active: index == 0,
                 icon: Icons.home_rounded,
                 title: 'Início',
-                onTap: () => setState(() => index = 0),
+                onTap: () => selectTab(0),
               ),
               _NavigationTile(
                 active: index == 1,
                 icon: Icons.search_rounded,
                 title: 'Vagas',
-                onTap: () => setState(() => index = 1),
+                onTap: () => selectTab(1),
               ),
               _NavigationTile(
                 active: index == 2,
                 icon: Icons.calendar_month_rounded,
                 title: 'Meus turnos',
-                onTap: () => setState(() => index = 2),
+                onTap: () => selectTab(2),
               ),
               _NavigationTile(
                 active: index == 3,
                 icon: Icons.account_balance_wallet_outlined,
                 title: 'Ganhos',
-                onTap: () => setState(() => index = 3),
+                onTap: () => selectTab(3),
               ),
             ],
           ),
@@ -85,6 +119,7 @@ class _NavigationTile extends StatelessWidget {
     required this.title,
     required this.onTap,
   });
+
   final bool active;
   final IconData icon;
   final String title;
