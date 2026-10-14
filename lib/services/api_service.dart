@@ -290,7 +290,7 @@ class ApiService {
 
   Future<List<Job>> opportunities() async {
     if (demoMode) return demoJobs();
-    final data = await _request('GET', '/opportunities');
+    final data = await _request('GET', authenticated ? '/opportunities' : '/public/opportunities');
     final list = data['data'];
     if (list is! List) return <Job>[];
     return list
@@ -309,7 +309,7 @@ class ApiService {
         orElse: () => demoJobs().first,
       );
     }
-    final data = await _request('GET', '/shifts/' + id.toString());
+    final data = await _request('GET', (authenticated ? '/shifts/' : '/public/shifts/') + id.toString());
     return Job.fromJson(
       Map<String, dynamic>.from(data['data'] as Map),
     );
