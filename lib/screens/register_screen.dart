@@ -486,7 +486,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (!mounted || verifiedRole == null) return;
 
       if (verifiedRole == 'professional') {
-        Navigator.of(context).popUntil((route) => route.isFirst);
+        // Preserva a vaga escolhida durante o cadastro.
+        Navigator.of(context).pop();
         widget.onProfessionalRegistered();
       } else {
         await showDialog<void>(
