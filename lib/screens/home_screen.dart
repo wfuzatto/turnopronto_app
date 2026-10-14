@@ -20,11 +20,13 @@ class HomeScreen extends StatefulWidget {
     required this.api,
     this.showAll = false,
     this.onSeeAll,
+    this.onRequireAuth,
   });
 
   final ApiService api;
   final bool showAll;
   final VoidCallback? onSeeAll;
+  final Future<bool> Function()? onRequireAuth;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -70,14 +72,20 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> openDetails(Job job) async {
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => JobDetailScreen(api: widget.api, job: job),
+        builder: (_) => JobDetailScreen(
+          api: widget.api, job: job, onRequireAuth: widget.onRequireAuth,
+        ),
       ),
     );
     if (mounted) await refresh();
   }
 
   Future<void> interest(Job job) async {
-    if (sending.contains(job.id)) return;
+    if (!widget.api.authenticated) {
+      final request = widget.onRequireAuth;
+      if (request == null || !await request()) return;
+    }
+    if (!mounted || sending.contains(job.id)) return;
     setState(() => sending.add(job.id));
     try {
       // Mesma validação utilizada pelo detalhe da vaga: nunca ignora o
@@ -215,7 +223,12 @@ class _HomeScreenState extends State<HomeScreen> {
         key: const Key('turnopronto-home-feed'),
         padding: const EdgeInsets.fromLTRB(18, 16, 18, 106),
         children: [
-          _HomeHeader(firstName: firstName, onNotifications: showNotifications),
+          _HomeHeader(
+            firstName: firstName,
+            onNotifications: showNotifications,
+            guest: !widget.api.authenticated,
+            onLogin: widget.onRequireAuth,
+          ),
           const SizedBox(height: 27),
           _HeroArea(city: city),
           const SizedBox(height: 26),
@@ -279,6 +292,15 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           const BrandLogo(compact: true),
           const SizedBox(height: 24),
+          if (!widget.api.authenticated)
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: () => widget.onRequireAuth?.call(),
+                icon: const Icon(Icons.login_rounded),
+                label: const Text('Entrar / Criar conta'),
+              ),
+            ),
           const Text(
             'Todas as vagas',
             style: TextStyle(
@@ -325,9 +347,16 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class _HomeHeader extends StatelessWidget {
-  const _HomeHeader({required this.firstName, required this.onNotifications});
+  const _HomeHeader({
+    required this.firstName,
+    required this.onNotifications,
+    required this.guest,
+    this.onLogin,
+  });
   final String firstName;
   final VoidCallback onNotifications;
+  final bool guest;
+  final Future<bool> Function()? onLogin;
 
   @override
   Widget build(BuildContext context) {
@@ -344,7 +373,12 @@ class _HomeHeader extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 9),
-        Semantics(
+        if (guest)
+          TextButton(
+            onPressed: () => onLogin?.call(),
+            child: const Text('Entrar'),
+          )
+        else Semantics(
           label: 'Notificações',
           button: true,
           child: Material(
