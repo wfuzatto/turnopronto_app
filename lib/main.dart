@@ -18,24 +18,46 @@ class TurnoProntoApp extends StatefulWidget {
 
 class _TurnoProntoAppState extends State<TurnoProntoApp> {
   final api = ApiService();
-  bool loggedIn = false;
+  final navigatorKey = GlobalKey<NavigatorState>();
 
-  void onLoggedIn() => setState(() => loggedIn = true);
+  /// O login só é solicitado ao executar ações protegidas.
+  /// A vaga selecionada permanece na pilha de navegação.
+  Future<bool> requireLogin() async {
+    if (api.authenticated) return true;
+    final navigator = navigatorKey.currentState;
+    if (navigator == null) return false;
+    final result = await navigator.push<bool>(
+      MaterialPageRoute(
+        builder: (loginContext) => LoginScreen(
+          api: api,
+          onLoggedIn: () {
+            if (mounted) setState(() {});
+            Navigator.of(loginContext).pop(true);
+          },
+        ),
+      ),
+    );
+    return result == true && api.authenticated;
+  }
 
   Future<void> onLogout() async {
     await api.logout();
-    if (mounted) setState(() => loggedIn = false);
+    if (mounted) setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey,
       debugShowCheckedModeBanner: false,
       title: 'TurnoPronto',
       theme: turnoprontoTheme(),
-      home: loggedIn
-          ? HomeShell(api: api, onLogout: onLogout)
-          : LoginScreen(api: api, onLoggedIn: onLoggedIn),
+      home: HomeShell(
+        key: ValueKey(api.authenticated),
+        api: api,
+        onLogout: onLogout,
+        onRequireAuth: requireLogin,
+      ),
     );
   }
 }
