@@ -37,6 +37,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController searchController = TextEditingController();
   late Future<List<Job>> future;
   List<Job>? enrichedJobs;
+  bool onlyFollowing = false;
   late bool lastAuthenticated;
   final Set<int> sending = <int>{};
 
@@ -288,9 +289,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _allJobsPage(List<Job> jobs) {
     final filter = searchController.text.trim().toLowerCase();
+    final candidates = onlyFollowing
+        ? jobs.where((job) => job.following).toList()
+        : jobs;
     final visible = filter.isEmpty
-        ? jobs
-        : jobs.where((job) {
+        ? candidates
+        : candidates.where((job) {
             final terms = [
               job.role, job.title, job.company, job.city, job.state,
             ].join(' ').toLowerCase();
@@ -341,12 +345,47 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
+          const SizedBox(height: 12),
+          if (widget.api.authenticated)
+            Material(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              child: CheckboxListTile(
+                key: const Key('only-followed-jobs'),
+                value: onlyFollowing,
+                onChanged: (value) => setState(() => onlyFollowing = value ?? false),
+                title: const Text(
+                  'Somente vagas acompanhadas',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800,
+                      color: TpColors.navy),
+                ),
+                subtitle: const Text(
+                  'Exibir vagas que estou acompanhando',
+                  style: TextStyle(fontSize: 12, color: TpColors.muted),
+                ),
+                secondary: const Icon(Icons.bookmark_outline_rounded,
+                    color: TpColors.blue),
+                controlAffinity: ListTileControlAffinity.leading,
+                activeColor: TpColors.blue,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                dense: true,
+              ),
+            ),
           const SizedBox(height: 15),
           Text(visible.length.toString() + ' vagas encontradas',
               style: const TextStyle(color: TpColors.muted, fontWeight: FontWeight.w700)),
           const SizedBox(height: 14),
           if (visible.isEmpty)
-            const _NoJobs()
+            onlyFollowing && widget.api.authenticated
+                ? const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 32),
+                    child: Text(
+                      'Nenhuma vaga acompanhada disponível no momento.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: TpColors.muted, fontSize: 14),
+                    ),
+                  )
+                : const _NoJobs()
           else
             ...visible.map((job) => _CompactCard(
               key: ValueKey('search-job-' + job.id.toString()),
