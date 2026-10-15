@@ -290,16 +290,33 @@ class ApiService {
 
   Future<List<Job>> opportunities() async {
     if (demoMode) return demoJobs();
-    final data = await _request('GET', authenticated ? '/opportunities' : '/public/opportunities');
-    final list = data['data'];
-    if (list is! List) return <Job>[];
-    return list
-        .map(
-          (e) => Job.fromJson(
-            Map<String, dynamic>.from(e as Map),
-          ),
-        )
-        .toList();
+    // A vitrine pública é a fonte das vagas disponíveis para visitantes e
+    // usuários autenticados. A rota privada pode aplicar filtros adicionais
+    // e nunca deve fazer as oportunidades públicas desaparecerem após login.
+    final publicData = await _request('GET', '/public/opportunities');
+    final publicList = publicData['data'];
+    final publicJobs = publicList is List
+        ? publicList.map((e) => Job.fromJson(Map<String, dynamic>.from(e as Map))).toList()
+        : <Job>[];
+    if (!authenticated) return publicJobs;
+
+    // A resposta autenticada fornece o estado individual de acompanhamento.
+    // Erros ou lista vazia não comprometem a vitrine pública.
+    try {
+      final privateData = await _request('GET', '/opportunities');
+      final privateList = privateData['data'];
+      if (privateList is! List) return publicJobs;
+      final privateJobs = privateList
+          .map((e) => Job.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList();
+      final byId = {for (final job in privateJobs) job.id: job};
+      return [
+        for (final job in publicJobs)
+          job.copyWith(following: byId[job.id]?.following ?? job.following),
+      ];
+    } catch (_) {
+      return publicJobs;
+    }
   }
 
   Future<Job> job(int id) async {
