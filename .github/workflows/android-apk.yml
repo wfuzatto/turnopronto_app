@@ -160,14 +160,14 @@ jobs:
           app_gradle = Path("android/app/build.gradle.kts")
           content = app_gradle.read_text()
           import re
-          match = re.search(r'applicationId\\s*=\\s*"([^"]+)"', content)
+          match = re.search(r'applicationId\s*=\s*"([^"]+)"', content)
           assert match, "applicationId não encontrado"
           package = match.group(1)
           clients = [c.get("client_info", {}).get("android_client_info", {}).get("package_name") for c in cfg.get("client", [])]
           assert package in clients, f"Firebase não possui app Android para {package}; cadastre os dois package names no Firebase."
-          app_gradle.write_text(content.replace('plugins {', 'plugins {\\n    id("com.google.gms.google-services")', 1))
+          app_gradle.write_text(content.replace('plugins {', 'plugins {\n    id("com.google.gms.google-services")', 1))
           settings = Path("android/settings.gradle.kts")
-          settings.write_text(settings.read_text().replace('plugins {', 'plugins {\\n    id("com.google.gms.google-services") version "4.5.0" apply false', 1))
+          settings.write_text(settings.read_text().replace('plugins {', 'plugins {\n    id("com.google.gms.google-services") version "4.5.0" apply false', 1))
           print("Firebase configurado para Android:", package)
           PY
 
