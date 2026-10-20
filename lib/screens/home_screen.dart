@@ -19,14 +19,14 @@ class HomeScreen extends StatefulWidget {
   const HomeScreen({
     super.key,
     required this.api,
-    required this.notifications,
+    this.notifications,
     this.showAll = false,
     this.onSeeAll,
     this.onRequireAuth,
   });
 
   final ApiService api;
-  final NotificationService notifications;
+  final NotificationService? notifications;
   final bool showAll;
   final VoidCallback? onSeeAll;
   final Future<bool> Function()? onRequireAuth;
@@ -157,6 +157,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void showNotifications() {
+    if (widget.notifications == null) return;
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
@@ -165,9 +166,9 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Padding(
           padding: const EdgeInsets.fromLTRB(18, 12, 18, 28),
           child: AnimatedBuilder(
-            animation: widget.notifications,
+            animation: widget.notifications!,
             builder: (context, _) {
-              final push = widget.notifications;
+              final push = widget.notifications!;
               return Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
