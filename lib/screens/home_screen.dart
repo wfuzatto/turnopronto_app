@@ -22,6 +22,7 @@ class HomeScreen extends StatefulWidget {
     this.notifications,
     this.showAll = false,
     this.onSeeAll,
+    this.onOpenAccount,
     this.onRequireAuth,
   });
 
@@ -29,6 +30,7 @@ class HomeScreen extends StatefulWidget {
   final NotificationService? notifications;
   final bool showAll;
   final VoidCallback? onSeeAll;
+  final VoidCallback? onOpenAccount;
   final Future<bool> Function()? onRequireAuth;
 
   @override
@@ -202,6 +204,15 @@ class _HomeScreenState extends State<HomeScreen> {
                     Text(push.error!,
                         textAlign: TextAlign.center,
                         style: const TextStyle(color: Color(0xFF9D3340))),
+                  if (widget.onOpenAccount != null)
+                    TextButton.icon(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        widget.onOpenAccount?.call();
+                      },
+                      icon: const Icon(Icons.manage_accounts_outlined),
+                      label: const Text('Configurar distância na minha conta'),
+                    ),
                   const SizedBox(height: 8),
                 ],
               );
@@ -268,6 +279,7 @@ class _HomeScreenState extends State<HomeScreen> {
           _HomeHeader(
             firstName: firstName,
             onNotifications: showNotifications,
+             onOpenAccount: widget.onOpenAccount,
             guest: !widget.api.authenticated,
             onLogin: widget.onRequireAuth,
           ),
@@ -431,11 +443,13 @@ class _HomeHeader extends StatelessWidget {
     required this.firstName,
     required this.onNotifications,
     required this.guest,
+    this.onOpenAccount,
     this.onLogin,
   });
   final String firstName;
   final VoidCallback onNotifications;
   final bool guest;
+  final VoidCallback? onOpenAccount;
   final Future<bool> Function()? onLogin;
 
   @override
@@ -444,12 +458,24 @@ class _HomeHeader extends StatelessWidget {
       children: [
         const Flexible(child: BrandLogo(compact: true)),
         const SizedBox(width: 7),
-        Text('Olá, ' + firstName + '!',
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            color: TpColors.navy, fontSize: 14.5,
-            fontWeight: FontWeight.w900,
+        Flexible(
+          child: InkWell(
+            onTap: guest ? null : onOpenAccount,
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              Flexible(child: Text('Olá, ' + firstName + '!',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: TpColors.navy, fontSize: 14.5,
+                  fontWeight: FontWeight.w900,
+                ),
+              )),
+              if (!guest) const Padding(
+                padding: EdgeInsets.only(left: 3),
+                child: Icon(Icons.manage_accounts_outlined,
+                  size: 20, color: TpColors.blue),
+              ),
+            ]),
           ),
         ),
         const SizedBox(width: 9),

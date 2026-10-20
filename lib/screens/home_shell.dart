@@ -6,6 +6,7 @@ import '../theme/app_theme.dart';
 import 'assignments_screen.dart';
 import 'earnings_screen.dart';
 import 'home_screen.dart';
+import 'profile_screen.dart';
 
 class HomeShell extends StatefulWidget {
   const HomeShell({
@@ -36,6 +37,26 @@ class _HomeShellState extends State<HomeShell> {
     if (mounted) setState(() => index = next);
   }
 
+  Future<void> openAccount() async {
+    if (!widget.api.authenticated) {
+      final request = widget.onRequireAuth;
+      if (request == null || !await request()) return;
+    }
+    if (!mounted) return;
+    await Navigator.of(context).push(MaterialPageRoute<void>(
+      builder: (_) => Scaffold(
+        appBar: AppBar(title: const Text('Minha conta')),
+        body: ProfileScreen(
+          api: widget.api,
+          onLogout: () async {
+            await widget.onLogout();
+            if (mounted) Navigator.of(context).pop();
+          },
+        ),
+      ),
+    ));
+  }
+
   @override
   Widget build(BuildContext context) {
     final screens = [
@@ -43,12 +64,14 @@ class _HomeShellState extends State<HomeShell> {
         api: widget.api,
         notifications: widget.notifications,
         onSeeAll: () => selectTab(1),
+        onOpenAccount: openAccount,
         onRequireAuth: widget.onRequireAuth,
       ),
       HomeScreen(
         api: widget.api,
         notifications: widget.notifications,
         showAll: true,
+        onOpenAccount: openAccount,
         onRequireAuth: widget.onRequireAuth,
       ),
       if (widget.api.authenticated) ...[
