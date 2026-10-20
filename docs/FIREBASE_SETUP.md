@@ -48,3 +48,17 @@ Para desenvolvimento local com shell Android já gerado, use o mesmo `google-ser
 ### Observações
 
 Sem o secret do GitHub o app continua funcionando normalmente, mas mostra que as notificações estão indisponíveis. Sem a conta de serviço e o cron do servidor não há envio externo mesmo com token registrado. O APK precisa ser reconstruído após cadastrar o Firebase.
+
+## Limite de distância dos alertas de vagas
+
+Abra **Minha conta** no aplicativo pela saudação na tela inicial (ou pelo
+link no sino de notificações). Em **Notificações de vagas**, mova o controle
+**Notificações até: ... km** (5–200 km, passos de 5 km) e clique em
+**Salvar distância**. A localização de referência pode ser atualizada pelo
+botão dedicado; se a conta não tiver localização, o app solicita GPS ao salvar.
+A API salva o raio e a origem em `tp_push_preferences` no banco do site;
+a distância geográfica é aproximada em linha reta, não viária.
+
+Um profissional sem raio configurado continua a receber notificações por
+categoria como antes. Com raio salvo, vagas sem coordenadas ficam fora do
+envio por segurança. Não há rastreamento contínuo de GPS.

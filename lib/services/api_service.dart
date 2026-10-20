@@ -74,6 +74,28 @@ class ApiService {
     }
   }
 
+  Future<Map<String, dynamic>> pushPreferences() async {
+    if (demoMode) return {
+      'radius_km': null, 'latitude': null, 'longitude': null, 'configured': false,
+    };
+    final response = await _request('GET', '/push/preferences');
+    return Map<String, dynamic>.from(response['data'] as Map);
+  }
+
+  Future<Map<String, dynamic>> savePushPreferences(
+      int radiusKm, {double? latitude, double? longitude}) async {
+    if (demoMode) return {
+      'radius_km': radiusKm, 'latitude': latitude,
+      'longitude': longitude, 'configured': true,
+    };
+    final response = await _request('POST', '/push/preferences', body: {
+      'radius_km': radiusKm,
+      if (latitude != null) 'latitude': latitude,
+      if (longitude != null) 'longitude': longitude,
+    });
+    return Map<String, dynamic>.from(response['data'] as Map);
+  }
+
   Future<void> registerPushToken(String fcmToken, {required String platform}) async {
     if (!authenticated || demoMode) return;
     await _request('POST', '/push/devices', body: {

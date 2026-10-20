@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import '../services/location_service.dart';
 import '../theme/app_theme.dart';
 import 'documents_screen.dart';
 import 'reputation_screen.dart';
@@ -20,15 +21,165 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   late Future<Map<String, dynamic>> future;
+  final location = LocationService();
+  double radiusKm = 50;
+  double? originLatitude;
+  double? originLongitude;
+  bool radiusConfigured = false;
+  bool savingRadius = false;
+  bool loadingLocation = false;
 
   @override
   void initState() {
     super.initState();
-    future = widget.api.me();
+    future = _load();
+  }
+
+  Future<Map<String, dynamic>> _load() async {
+    final profile = await widget.api.me();
+    final prefs = await widget.api.pushPreferences();
+    radiusKm = double.tryParse((prefs['radius_km'] ?? 50).toString()) ?? 50;
+    originLatitude = double.tryParse((prefs['latitude'] ?? '').toString());
+    originLongitude = double.tryParse((prefs['longitude'] ?? '').toString());
+    radiusConfigured = prefs['configured'] == true;
+    return profile;
   }
 
   void refresh() {
-    setState(() => future = widget.api.me());
+    setState(() => future = _load());
+  }
+
+  Future<bool> _useCurrentLocation() async {
+    setState(() => loadingLocation = true);
+    try {
+      final position = await location.currentPosition();
+      if (!mounted) return false;
+      setState(() {
+        originLatitude = position.latitude;
+        originLongitude = position.longitude;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Localização de referência atualizada. Salve para aplicar.')),
+      );
+      return true;
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error.toString())),
+        );
+      }
+      return false;
+    } finally {
+      if (mounted) setState(() => loadingLocation = false);
+    }
+  }
+
+  Future<void> _saveRadius() async {
+    if (savingRadius) return;
+    if ((originLatitude == null || originLongitude == null) &&
+        !await _useCurrentLocation()) return;
+    if (!mounted) return;
+    setState(() => savingRadius = true);
+    try {
+      final result = await widget.api.savePushPreferences(
+        radiusKm.round(),
+        latitude: originLatitude,
+        longitude: originLongitude,
+      );
+      if (!mounted) return;
+      setState(() {
+        radiusConfigured = result['configured'] == true;
+        originLatitude = double.tryParse((result['latitude'] ?? '').toString());
+        originLongitude = double.tryParse((result['longitude'] ?? '').toString());
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Notificações configuradas para até ${radiusKm.round()} km.')),
+      );
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error.toString())),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => savingRadius = false);
+    }
+  }
+
+  Widget _radiusSettings() {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: TpColors.line),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.notifications_active_outlined, color: TpColors.blue),
+              SizedBox(width: 8),
+              Expanded(child: Text('Notificações de vagas',
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900))),
+            ],
+          ),
+          const SizedBox(height: 8),
+          const Text('Escolha até que distância deseja ser avisado sobre '
+              'vagas das suas áreas de interesse.',
+            style: TextStyle(fontSize: 12, color: TpColors.muted)),
+          const SizedBox(height: 18),
+          Text('Notificações até: ${radiusKm.round()} km',
+            style: const TextStyle(color: TpColors.navy, fontSize: 18,
+                fontWeight: FontWeight.w900)),
+          Slider(
+            key: const Key('notification-radius-slider'),
+            min: 5, max: 200, divisions: 39,
+            value: radiusKm,
+            label: '${radiusKm.round()} km',
+            onChanged: savingRadius ? null : (value) {
+              setState(() => radiusKm = value);
+            },
+          ),
+          const Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('5 km', style: TextStyle(fontSize: 11, color: TpColors.muted)),
+              Text('200 km', style: TextStyle(fontSize: 11, color: TpColors.muted)),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            radiusConfigured
+                ? 'Filtro ativo. Distância a partir da localização salva.'
+                : 'Filtro ainda não ativado. Salve sua preferência.',
+            style: const TextStyle(fontSize: 12, color: TpColors.muted),
+          ),
+          const SizedBox(height: 6),
+          const Text('Distância em linha reta. O aplicativo não acompanha '
+              'sua posição continuamente.',
+            style: TextStyle(fontSize: 11, color: TpColors.muted)),
+          const SizedBox(height: 14),
+          OutlinedButton.icon(
+            onPressed: loadingLocation || savingRadius
+                ? null : () => _useCurrentLocation(),
+            icon: const Icon(Icons.my_location_rounded),
+            label: Text(loadingLocation
+                ? 'Localizando...' : 'Atualizar minha localização'),
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              key: const Key('save-notification-radius'),
+              onPressed: savingRadius || loadingLocation ? null : _saveRadius,
+              child: Text(savingRadius ? 'Salvando...' : 'Salvar distância'),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -173,6 +324,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ],
                 ),
               ),
+              const SizedBox(height: 13),
+              _radiusSettings(),
               const SizedBox(height: 13),
               _Menu(
                 icon: Icons.badge_outlined,

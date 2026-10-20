@@ -23,6 +23,9 @@ class LocationService {
   static const _osrmBase = 'https://router.project-osrm.org';
   static const _nominatimBase = 'https://nominatim.openstreetmap.org';
 
+  /// GPS somente a pedido do profissional ao definir a posição de referência.
+  Future<Position> currentPosition() => _position();
+
   Future<OpportunityLocationResult> enrichJobs(List<Job> jobs) async {
     final position = await _position();
     return _enrichFromOrigin(
