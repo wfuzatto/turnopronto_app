@@ -55,9 +55,10 @@ jobs:
           text = manifest.read_text()
           text = text.replace('android:label="turnopronto_app"', 'android:label="TurnoPronto"')
           permissions = (
-              '    <uses-permission android:name="android.permission.INTERNET" />\\n'
-              '    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />\\n'
-              '    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />\\n'
+              '    <uses-permission android:name="android.permission.INTERNET" />\n'
+              '    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />\n'
+              '    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />\n'
+              '    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />\n'
           )
           if "android.permission.ACCESS_FINE_LOCATION" not in text:
               text = text.replace("<manifest xmlns:android=", "<manifest xmlns:android=", 1)
