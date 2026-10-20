@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../models/job.dart';
 import '../services/api_service.dart';
+import '../services/notification_service.dart';
 import '../services/location_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/brand_logo.dart';
@@ -18,12 +19,14 @@ class HomeScreen extends StatefulWidget {
   const HomeScreen({
     super.key,
     required this.api,
+    required this.notifications,
     this.showAll = false,
     this.onSeeAll,
     this.onRequireAuth,
   });
 
   final ApiService api;
+  final NotificationService notifications;
   final bool showAll;
   final VoidCallback? onSeeAll;
   final Future<bool> Function()? onRequireAuth;
@@ -158,25 +161,50 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       showDragHandle: true,
       backgroundColor: Colors.white,
-      builder: (context) => const SafeArea(
+      builder: (context) => SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 12, 24, 30),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.notifications_none_rounded, size: 40, color: TpColors.blue),
-              const SizedBox(height: 12),
-              const Text('Notificações', style: TextStyle(
-                color: TpColors.navy, fontSize: 22, fontWeight: FontWeight.w900,
-              )),
-              const SizedBox(height: 8),
-              const Text(
-                'Acompanhe as confirmações e atualizações dos seus turnos em Meus turnos.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: TpColors.muted, fontSize: 14),
-              ),
-              const SizedBox(height: 14),
-            ],
+          padding: const EdgeInsets.fromLTRB(18, 12, 18, 28),
+          child: AnimatedBuilder(
+            animation: widget.notifications,
+            builder: (context, _) {
+              final push = widget.notifications;
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.notifications_active_outlined,
+                      size: 40, color: TpColors.blue),
+                  const SizedBox(height: 12),
+                  const Text('Avisos de novas vagas', style: TextStyle(
+                    color: TpColors.navy, fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                  )),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Receba uma notificação quando uma empresa publicar '
+                    'uma vaga nas áreas que você selecionou no seu cadastro.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: TpColors.muted, fontSize: 14),
+                  ),
+                  const SizedBox(height: 12),
+                  SwitchListTile.adaptive(
+                    title: const Text('Notificações de vagas'),
+                    subtitle: const Text('Alertas conforme suas áreas de interesse'),
+                    value: push.enabled,
+                    onChanged: push.busy
+                        ? null
+                        : (value) => push.setEnabled(value),
+                  ),
+                  if (!push.available)
+                    const Text('Firebase não configurado neste APK.',
+                        style: TextStyle(color: TpColors.muted)),
+                  if (push.error != null)
+                    Text(push.error!,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(color: Color(0xFF9D3340))),
+                  const SizedBox(height: 8),
+                ],
+              );
+            },
           ),
         ),
       ),

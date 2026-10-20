@@ -74,6 +74,20 @@ class ApiService {
     }
   }
 
+  Future<void> registerPushToken(String fcmToken, {required String platform}) async {
+    if (!authenticated || demoMode) return;
+    await _request('POST', '/push/devices', body: {
+      'token': fcmToken,
+      'platform': platform,
+      'enabled': true,
+    });
+  }
+
+  Future<void> unregisterPushToken(String fcmToken) async {
+    if (!authenticated || demoMode) return;
+    await _request('POST', '/push/devices/unregister', body: {'token': fcmToken});
+  }
+
   Future<void> health() async {
     if (demoMode) return;
     await _request('GET', '/health');

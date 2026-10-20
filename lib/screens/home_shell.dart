@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../services/api_service.dart';
+import '../services/notification_service.dart';
 import '../theme/app_theme.dart';
 import 'assignments_screen.dart';
 import 'earnings_screen.dart';
@@ -10,11 +11,13 @@ class HomeShell extends StatefulWidget {
   const HomeShell({
     super.key,
     required this.api,
+    required this.notifications,
     required this.onLogout,
     this.onRequireAuth,
   });
 
   final ApiService api;
+  final NotificationService notifications;
   final Future<void> Function() onLogout;
   final Future<bool> Function()? onRequireAuth;
 
@@ -38,11 +41,13 @@ class _HomeShellState extends State<HomeShell> {
     final screens = [
       HomeScreen(
         api: widget.api,
+        notifications: widget.notifications,
         onSeeAll: () => selectTab(1),
         onRequireAuth: widget.onRequireAuth,
       ),
       HomeScreen(
         api: widget.api,
+        notifications: widget.notifications,
         showAll: true,
         onRequireAuth: widget.onRequireAuth,
       ),

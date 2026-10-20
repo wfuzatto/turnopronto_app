@@ -4,13 +4,16 @@ publish_to: none
 version: 0.4.0+4
 
 environment:
-  sdk: '>=3.5.0 <4.0.0'
+  sdk: '>=3.6.0 <4.0.0'
 
 dependencies:
   flutter:
     sdk: flutter
   geolocator: ^13.0.4
   flutter_svg: ^2.0.17
+  firebase_core: ^4.15.0
+  firebase_messaging: ^16.7.0
+  shared_preferences: ^2.5.3
 
 dev_dependencies:
   flutter_test:

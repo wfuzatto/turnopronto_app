@@ -19,3 +19,7 @@ ios/Flutter/ephemeral/
 *.jks
 *.keystore
 signing-recovery.txt
+
+# Firebase account/private local configuration
+android/app/google-services.json
+**/service-account*.json
