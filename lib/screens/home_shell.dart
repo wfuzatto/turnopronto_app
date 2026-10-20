@@ -11,13 +11,13 @@ class HomeShell extends StatefulWidget {
   const HomeShell({
     super.key,
     required this.api,
-    required this.notifications,
+    this.notifications,
     required this.onLogout,
     this.onRequireAuth,
   });
 
   final ApiService api;
-  final NotificationService notifications;
+  final NotificationService? notifications;
   final Future<void> Function() onLogout;
   final Future<bool> Function()? onRequireAuth;
 
